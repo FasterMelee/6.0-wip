@@ -10,35 +10,14 @@
 
 namespace Common
 {
-#ifdef _DEBUG
-#define BUILD_TYPE_STR "Debug "
-#elif defined DEBUGFAST
-#define BUILD_TYPE_STR "DebugFast "
-#else
-#define BUILD_TYPE_STR ""
-#endif
-
-const std::string scm_rev_str = "Faster Melee "
-#if !SCM_IS_MASTER
-                                "[" SCM_BRANCH_STR "] "
-#endif
-
-#ifdef __INTEL_COMPILER
-    BUILD_TYPE_STR SCM_DESC_STR "-ICC";
-#else
-    BUILD_TYPE_STR SCM_DESC_STR;
-#endif
-
-const std::string scm_rev_git_str = SCM_REV_STR;
-const std::string scm_desc_str = SCM_DESC_STR;
-const std::string scm_branch_str = SCM_BRANCH_STR;
-const std::string scm_distributor_str = SCM_DISTRIBUTOR_STR;
+const std::string git_commit = GIT_COMMIT;
+const std::string git_version = GIT_VERSION;
 
 #ifdef _WIN32
-const std::string netplay_dolphin_ver = SCM_DESC_STR " Win";
+const std::string netplay_version = GIT_VERSION " Windows";
 #elif __APPLE__
-const std::string netplay_dolphin_ver = SCM_DESC_STR " Mac";
+const std::string netplay_version = GIT_VERSION " Mac";
 #else
-const std::string netplay_dolphin_ver = SCM_DESC_STR " Lin";
+const std::string netplay_version = GIT_VERSION " Linux";
 #endif
 }  // namespace Common

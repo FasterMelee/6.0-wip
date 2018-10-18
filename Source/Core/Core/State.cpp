@@ -117,7 +117,7 @@ static bool DoStateVersion(PointerWrap& p, std::string* version_created_by)
     version = cookie - COOKIE_BASE;
   }
 
-  *version_created_by = Common::scm_rev_str;
+  *version_created_by = Common::git_commit;
   if (version > 42)
     p.Do(*version_created_by);
   else

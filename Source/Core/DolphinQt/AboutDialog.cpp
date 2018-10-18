@@ -23,11 +23,9 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
   text.append(QStringLiteral("<p style='font-size:38pt; font-weight:400; margin-bottom:0;'>") +
               tr("Dolphin") + QStringLiteral("</p>"));
   text.append(QStringLiteral("<p style='font-size:18pt; margin-top:0;'>%1</p>")
-                  .arg(QString::fromUtf8(Common::scm_desc_str.c_str())));
+                  .arg(QString::fromUtf8(Common::git_version.c_str())));
 
-  text.append(small + tr("Branch: ") + QString::fromUtf8(Common::scm_branch_str.c_str()) +
-              QStringLiteral("</p>"));
-  text.append(small + tr("Revision: ") + QString::fromUtf8(Common::scm_rev_git_str.c_str()) +
+  text.append(small + tr("Commit: ") + QString::fromUtf8(Common::git_commit.c_str()) +
               QStringLiteral("</p>"));
 
   text.append(medium + tr("Check for updates: ") +

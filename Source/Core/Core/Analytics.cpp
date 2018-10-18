@@ -135,10 +135,10 @@ void DolphinAnalytics::MakeBaseBuilder()
   Common::AnalyticsReportBuilder builder;
 
   // Version information.
-  builder.AddData("version-desc", Common::scm_desc_str);
-  builder.AddData("version-hash", Common::scm_rev_git_str);
-  builder.AddData("version-branch", Common::scm_branch_str);
-  builder.AddData("version-dist", Common::scm_distributor_str);
+  builder.AddData("version-desc", Common::git_version);
+  builder.AddData("version-hash", Common::git_commit);
+  builder.AddData("version-branch", "");
+  builder.AddData("version-dist", "Faster Melee");
 
   // Auto-Update information.
   builder.AddData("update-track", SConfig::GetInstance().m_auto_update_track);

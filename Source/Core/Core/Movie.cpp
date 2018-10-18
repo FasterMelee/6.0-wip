@@ -1409,7 +1409,7 @@ void GetSettings()
        SConfig::GetInstance().m_EXIDevice[1] == ExpansionInterface::EXIDEVICE_MEMORYCARDFOLDER)
       << 1;
 
-  s_revision = ConvertGitRevisionToBytes(Common::scm_rev_git_str);
+  s_revision = ConvertGitRevisionToBytes(Common::git_commit);
 
   if (!Config::Get(Config::MAIN_DSP_HLE))
   {
