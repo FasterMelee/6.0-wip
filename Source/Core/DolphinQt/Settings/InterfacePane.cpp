@@ -109,9 +109,6 @@ void InterfacePane::CreateUI()
 
   groupbox_layout->addLayout(combobox_layout);
 
-  m_combobox_language = MakeLanguageComboBox();
-  combobox_layout->addRow(tr("&Language:"), m_combobox_language);
-
   // Theme Combobox
   m_combobox_theme = new QComboBox;
   combobox_layout->addRow(tr("&Theme:"), m_combobox_theme);
@@ -195,9 +192,6 @@ void InterfacePane::ConnectLayout()
   connect(m_combobox_userstyle,
           static_cast<void (QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged), this,
           &InterfacePane::OnSaveConfig);
-  connect(m_combobox_language,
-          static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this,
-          &InterfacePane::OnSaveConfig);
   connect(m_checkbox_confirm_on_stop, &QCheckBox::toggled, this, &InterfacePane::OnSaveConfig);
   connect(m_checkbox_use_panic_handlers, &QCheckBox::toggled, this, &InterfacePane::OnSaveConfig);
   connect(m_checkbox_show_active_title, &QCheckBox::toggled, this, &InterfacePane::OnSaveConfig);
@@ -214,8 +208,6 @@ void InterfacePane::LoadConfig()
   m_checkbox_top_window->setChecked(Settings::Instance().IsKeepWindowOnTopEnabled());
   m_checkbox_use_builtin_title_database->setChecked(startup_params.m_use_builtin_title_database);
   m_checkbox_show_debugging_ui->setChecked(Settings::Instance().IsDebugModeEnabled());
-  m_combobox_language->setCurrentIndex(m_combobox_language->findData(
-      QString::fromStdString(SConfig::GetInstance().m_InterfaceLanguage)));
   m_combobox_theme->setCurrentIndex(
       m_combobox_theme->findText(QString::fromStdString(SConfig::GetInstance().theme_name)));
 
@@ -264,15 +256,6 @@ void InterfacePane::OnSaveConfig()
   settings.m_PauseOnFocusLost = m_checkbox_pause_on_focus_lost->isChecked();
 
   SetEnableAlert(settings.bUsePanicHandlers);
-
-  auto new_language = m_combobox_language->currentData().toString().toStdString();
-  if (new_language != SConfig::GetInstance().m_InterfaceLanguage)
-  {
-    SConfig::GetInstance().m_InterfaceLanguage = new_language;
-    QMessageBox::information(
-        this, tr("Restart Required"),
-        tr("You must restart Dolphin in order for the change to take effect."));
-  }
 
   const bool use_covers = m_checkbox_use_covers->isChecked();
 

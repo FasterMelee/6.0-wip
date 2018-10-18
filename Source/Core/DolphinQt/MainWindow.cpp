@@ -1476,7 +1476,7 @@ void MainWindow::OnUpdateProgressDialog(QString title, int progress, int total)
     m_progress_dialog = new QProgressDialog(m_render_widget, Qt::WindowTitleHint);
     m_progress_dialog->show();
     m_progress_dialog->setCancelButton(nullptr);
-    m_progress_dialog->setWindowTitle(tr("Dolphin"));
+    m_progress_dialog->setWindowTitle(tr("Faster Melee"));
   }
 
   m_progress_dialog->setValue(progress);

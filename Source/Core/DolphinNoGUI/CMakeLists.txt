@@ -2,13 +2,13 @@ if(NOT(USE_X11 OR ENABLE_HEADLESS))
   return()
 endif()
 
-add_executable(dolphin-nogui
+add_executable(dolphin-fm-nogui
   MainNoGUI.cpp
 )
 
-set_target_properties(dolphin-nogui PROPERTIES OUTPUT_NAME dolphin-emu-nogui)
+set_target_properties(dolphin-fm-nogui PROPERTIES OUTPUT_NAME dolphin-fm-nogui)
 
-target_link_libraries(dolphin-nogui
+target_link_libraries(dolphin-fm-nogui
 PRIVATE
   core
   uicommon
@@ -16,9 +16,5 @@ PRIVATE
 )
 
 if(USE_DISCORD_PRESENCE)
-  target_compile_definitions(dolphin-nogui PRIVATE -DUSE_DISCORD_PRESENCE)
+  target_compile_definitions(dolphin-fm-nogui PRIVATE -DUSE_DISCORD_PRESENCE)
 endif()
-
-set(CPACK_PACKAGE_EXECUTABLES ${CPACK_PACKAGE_EXECUTABLES} dolphin-nogui)
-install(TARGETS dolphin-nogui RUNTIME DESTINATION ${bindir})
-

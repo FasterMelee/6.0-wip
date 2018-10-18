@@ -25,7 +25,7 @@
 
 RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent)
 {
-  setWindowTitle(QStringLiteral("Dolphin"));
+  setWindowTitle(QStringLiteral("Faster Melee"));
   setWindowIcon(Resources::GetAppIcon());
 
   QPalette p;

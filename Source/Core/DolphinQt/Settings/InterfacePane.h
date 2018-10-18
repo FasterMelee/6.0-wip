@@ -26,7 +26,6 @@ private:
   void OnSaveConfig();
 
   QVBoxLayout* m_main_layout;
-  QComboBox* m_combobox_language;
 
   QComboBox* m_combobox_theme;
   QComboBox* m_combobox_userstyle;

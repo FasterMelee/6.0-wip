@@ -9,12 +9,12 @@ set(CMAKE_OSX_ARCHITECTURES "x86_64")
 # features can be used, not the minimum required version to run.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "")
 
-project(dolphin-emu)
+project(dolphin-fm)
 
 # Name of the Dolphin distributor. If you redistribute Dolphin builds (forks,
 # unofficial builds) please consider identifying your distribution with a
 # unique name here.
-set(DISTRIBUTOR "None" CACHE STRING "Name of the distributor.")
+set(DISTRIBUTOR "FM" CACHE STRING "Name of the distributor.")
 
 option(USE_EGL "Enables EGL OpenGL Interface" OFF)
 option(TRY_X11 "Enables X11 Support" ON)
@@ -88,10 +88,10 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Set up paths
 set(bindir  ${CMAKE_INSTALL_PREFIX}/bin               CACHE PATH "bindir")
 if(HAIKU)
-	set(datadir ${CMAKE_INSTALL_PREFIX}/data/dolphin-emu  CACHE PATH "datadir")
+	set(datadir ${CMAKE_INSTALL_PREFIX}/data/dolphin-fm  CACHE PATH "datadir")
 	set(mandir  ${CMAKE_INSTALL_PREFIX}/documentation/man CACHE PATH "mandir")
 else()
-	set(datadir ${CMAKE_INSTALL_PREFIX}/share/dolphin-emu CACHE PATH "datadir")
+	set(datadir ${CMAKE_INSTALL_PREFIX}/share/dolphin-fm CACHE PATH "datadir")
 	set(mandir  ${CMAKE_INSTALL_PREFIX}/share/man         CACHE PATH "mandir")
 endif()
 add_definitions(-DDATA_DIR="${datadir}/")
@@ -759,41 +759,8 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES "Linux|FreeBSD|OpenBSD|Darwin")
 endif()
 if(CMAKE_SYSTEM_NAME MATCHES "Linux|FreeBSD|OpenBSD")
   # Install the application icon and menu item
-  install(FILES Data/dolphin-emu.svg
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps)
-  install(FILES Data/dolphin-emu.png
+  install(FILES Data/dolphin-fm.png
           DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/256x256/apps)
-  install(FILES Data/dolphin-emu.desktop
+  install(FILES Data/dolphin-fm.desktop
           DESTINATION ${CMAKE_INSTALL_PREFIX}/share/applications)
-  # Install manpages
-  install(FILES Data/dolphin-emu.6
-          DESTINATION ${mandir}/man6)
-  install(FILES Data/dolphin-emu-nogui.6
-          DESTINATION ${mandir}/man6)
 endif()
-
-# packaging information
-set(CPACK_PACKAGE_NAME "dolphin-emu")
-set(CPACK_PACKAGE_VENDOR "Dolphin Team")
-set(CPACK_PACKAGE_VERSION_MAJOR ${DOLPHIN_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${DOLPHIN_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${DOLPHIN_VERSION_PATCH})
-set(CPACK_PACKAGE_DESCRIPTION_FILE ${PROJECT_SOURCE_DIR}/Data/cpack_package_description.txt)
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A GameCube and Wii emulator")
-
-set(CPACK_RPM_PACKAGE_GROUP System/Emulators/Other)
-set(CPACK_RPM_PACKAGE_LICENSE GPL-2.0)
-# TODO: CPACK_RESOURCE_FILE_README
-# TODO: CPACK_RESOURCE_FILE_WELCOME
-# TODO: CPACK_PACKAGE_ICON
-# TODO: CPACK_NSIS_*
-# TODO: Use CPack components for DSPSpy, etc => cpack_add_component
-
-set(CPACK_SET_DESTDIR ON)
-set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2;ZIP")
-set(CPACK_SOURCE_IGNORE_FILES  "\\\\.#;/#;.*~;\\\\.swp;/\\\\.git")
-list(APPEND CPACK_SOURCE_IGNORE_FILES "${CMAKE_BINARY_DIR}")
-
-# CPack must be included after the CPACK_* variables are set in order for those
-# variables to take effect.
-Include(CPack)

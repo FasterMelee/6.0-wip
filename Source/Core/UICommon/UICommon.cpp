@@ -199,12 +199,12 @@ void SetUserDirectory(const std::string& custom_path)
   // (on top of the command line flag, which overrides all this):
   // 1. GetExeDirectory()\portable.txt exists
   //    -> Use GetExeDirectory()\User
-  // 2. HKCU\Software\Dolphin Emulator\LocalUserConfig exists and is true
+  // 2. HKCU\Software\Faster Melee\LocalUserConfig exists and is true
   //    -> Use GetExeDirectory()\User
-  // 3. HKCU\Software\Dolphin Emulator\UserConfigPath exists
+  // 3. HKCU\Software\Faster Melee\UserConfigPath exists
   //    -> Use this as the user directory path
   // 4. My Documents exists
-  //    -> Use My Documents\Dolphin Emulator as the User directory path
+  //    -> Use My Documents\Faster Melee as the User directory path
   // 5. Default
   //    -> Use GetExeDirectory()\User
 
@@ -212,7 +212,7 @@ void SetUserDirectory(const std::string& custom_path)
   HKEY hkey;
   DWORD local = 0;
   TCHAR configPath[MAX_PATH] = {0};
-  if (RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Dolphin Emulator"), 0, KEY_QUERY_VALUE,
+  if (RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Faster Melee"), 0, KEY_QUERY_VALUE,
                    &hkey) == ERROR_SUCCESS)
   {
     DWORD size = 4;
@@ -239,7 +239,7 @@ void SetUserDirectory(const std::string& custom_path)
   else if (configPath[0])  // Case 3
     user_path = TStrToUTF8(configPath);
   else if (my_documents_found)  // Case 4
-    user_path = TStrToUTF8(my_documents) + DIR_SEP "Dolphin Emulator" DIR_SEP;
+    user_path = TStrToUTF8(my_documents) + DIR_SEP "Faster Melee" DIR_SEP;
   else  // Case 5
     user_path = File::GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
 
@@ -281,8 +281,8 @@ void SetUserDirectory(const std::string& custom_path)
     //    -> Use GetExeDirectory()/User
     // 2. $DOLPHIN_EMU_USERPATH is set
     //    -> Use $DOLPHIN_EMU_USERPATH
-    // 3. ~/.dolphin-emu directory exists
-    //    -> Use ~/.dolphin-emu
+    // 3. ~/.dolphin-fm directory exists
+    //    -> Use ~/.dolphin-fm
     // 4. Default
     //    -> Use XDG basedir, see
     //    http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html

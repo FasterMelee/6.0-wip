@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Icon=dolphin-fm
+Exec=dolphin-fm
+Terminal=false
+Type=Application
+Categories=Game;Emulator;
+Name=Faster Melee
+GenericName=Wii/GameCube Emulator
+Comment=A Wii/GameCube Emulator

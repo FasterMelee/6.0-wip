@@ -89,9 +89,9 @@ int main(int argc, char* argv[])
 
   QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-  QCoreApplication::setOrganizationName(QStringLiteral("Dolphin Emulator"));
-  QCoreApplication::setOrganizationDomain(QStringLiteral("dolphin-emu.org"));
-  QCoreApplication::setApplicationName(QStringLiteral("dolphin-emu"));
+  QCoreApplication::setOrganizationName(QStringLiteral("Faster Melee"));
+  QCoreApplication::setOrganizationDomain(QStringLiteral("fastermelee.net"));
+  QCoreApplication::setApplicationName(QStringLiteral("dolphin-fm"));
 
   QApplication app(argc, argv);
 
