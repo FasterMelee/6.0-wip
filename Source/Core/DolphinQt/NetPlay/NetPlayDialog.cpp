@@ -442,6 +442,9 @@ void NetPlayDialog::reject()
 
 void NetPlayDialog::show(std::string nickname, bool use_traversal)
 {
+  // have to set this here for some weird reason
+  m_has_gotten_initial_pad_buffer_size = false;
+
   m_nickname = nickname;
   m_use_traversal = use_traversal;
   m_buffer_size = 0;
