@@ -376,4 +376,6 @@ float GetAspectRatio();
 // Create a fake VI mode for a fifolog
 void FakeVIUpdate(u32 xfb_address, u32 fb_width, u32 fb_height);
 
+bool IsPal50();
+
 }  // namespace VideoInterface

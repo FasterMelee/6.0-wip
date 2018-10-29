@@ -29,16 +29,9 @@
 #include <sstream>
 
 #include "Common/CommonPaths.h"
-#include "Common/Config/Config.h"
 #include "Common/HttpRequest.h"
 #include "Common/TraversalClient.h"
 
-#include "Core/Config/GraphicsSettings.h"
-#include "Core/Config/MainSettings.h"
-#include "Core/Config/NetplaySettings.h"
-#include "Core/Config/SYSCONFSettings.h"
-#include "Core/ConfigLoaders/GameConfigLoader.h"
-#include "Core/ConfigManager.h"
 #include "Core/Core.h"
 #include "Core/NetPlayServer.h"
 
@@ -53,7 +46,6 @@
 #include "DolphinQt/Settings.h"
 
 #include "UICommon/DiscordPresence.h"
-#include "UICommon/GameFile.h"
 
 #include "VideoCommon/VideoConfig.h"
 
@@ -93,7 +85,7 @@ void NetPlayDialog::CreateMainLayout()
   m_game_button = new QPushButton;
   m_md5_button = new QToolButton;
   m_start_button = new QPushButton(tr("Start"));
-  m_buffer_size_box = new QSpinBox;
+  m_buffer_size_box = new QDoubleSpinBox;
   m_save_sd_box = new QCheckBox(tr("Write save/SD data"));
   m_load_wii_box = new QCheckBox(tr("Load Wii Save"));
   m_sync_save_data_box = new QCheckBox(tr("Sync Saves"));
@@ -108,6 +100,21 @@ void NetPlayDialog::CreateMainLayout()
   m_game_button->setAutoDefault(false);
 
   m_sync_save_data_box->setChecked(true);
+
+  if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+  {
+    m_buffer_size_box->setDecimals(2);
+    m_buffer_size_box->setSingleStep(0.25);
+    m_buffer_size_box->setSuffix(tr(" frame(s)"));
+  }
+  else
+  {
+    m_buffer_size_box->setSingleStep(1);
+    m_buffer_size_box->setDecimals(0);
+    m_buffer_size_box->setSuffix(QString::fromStdString(""));
+  }
+
+  m_buffer_size_box->setRange(0, 10000);
 
   auto* default_button = new QAction(tr("Calculate MD5 hash"), m_md5_button);
 
@@ -262,17 +269,19 @@ void NetPlayDialog::ConnectWidgets()
   connect(m_chat_type_edit, &QLineEdit::returnPressed, this, &NetPlayDialog::OnChat);
 
   // Other
-  connect(m_buffer_size_box, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-          [this](int value) {
-            if (value == m_buffer_size)
+  connect(m_buffer_size_box, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+          [this](double value) {
+            int ivalue = GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD) ? (int)(value * 100) : (int)value;
+
+            if (ivalue == m_buffer_size)
               return;
 
             auto client = Settings::Instance().GetNetPlayClient();
             auto server = Settings::Instance().GetNetPlayServer();
             if (server)
-              server->AdjustPadBufferSize(value);
+              server->AdjustPadBufferSize(ivalue);
             else
-              client->AdjustPadBufferSize(value);
+              client->AdjustPadBufferSize(ivalue);
           });
 
   connect(m_host_input_authority_box, &QCheckBox::toggled, [this](bool checked) {
@@ -708,10 +717,33 @@ void NetPlayDialog::OnMsgChangeGame(const std::string& title)
 {
   QString qtitle = QString::fromStdString(title);
   QueueOnObject(this, [this, qtitle, title] {
+    bool has_old_game = FindGameFile(m_current_game) != nullptr;
+    bool old_game_polled_on_siread = GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD);
+
     m_game_button->setText(qtitle);
     m_current_game = title;
     UpdateDiscordPresence();
+
+    if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+    {
+      m_buffer_size_box->setDecimals(2);
+      m_buffer_size_box->setSingleStep(0.25);
+      m_buffer_size_box->setSuffix(tr(" frame(s)"));
+    }
+    else
+    {
+      m_buffer_size_box->setSingleStep(1);
+      m_buffer_size_box->setDecimals(0);
+      m_buffer_size_box->setSuffix(QString::fromStdString(""));
+    }
+
+    if(has_old_game && old_game_polled_on_siread != GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+    {
+      DisplayMessage(tr("Polling methods differ. Resetting buffer."), "red");
+      m_buffer_size_box->setValue(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD) ? 1 : 5);
+    }
   });
+
   DisplayMessage(tr("Game changed to \"%1\"").arg(qtitle), "magenta");
 }
 
@@ -759,14 +791,41 @@ void NetPlayDialog::OnMsgStopGame()
 
 void NetPlayDialog::OnPadBufferChanged(u32 buffer)
 {
+  // weird hack but since NetPlayDialog knows about the selected game and NetPlayServer doesn't
+  // we reject the first attempt to set the pad buffer to 5 (= 0.05 frames) and instead set it to
+  // 100 (= 1 frame)
+  if(IsHosting() &&
+    !m_has_gotten_initial_pad_buffer_size &&
+    GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+  {
+    Settings::Instance().GetNetPlayServer()->AdjustPadBufferSize(100);
+    m_has_gotten_initial_pad_buffer_size = true;
+    return;
+  }
+
   QueueOnObject(this, [this, buffer] {
     const QSignalBlocker blocker(m_buffer_size_box);
-    m_buffer_size_box->setValue(buffer);
+
+    if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+      m_buffer_size_box->setValue(buffer / 100.0);
+    else
+      m_buffer_size_box->setValue(buffer);
   });
-  DisplayMessage(m_host_input_authority && !IsHosting() ?
-                     tr("Max buffer size changed to %1").arg(buffer) :
-                     tr("Buffer size changed to %1").arg(buffer),
-                 "");
+
+  if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+  {
+    QString frame_str = buffer == 100 ? tr("frame") : tr("frames");
+
+    DisplayMessage(m_host_input_authority && !IsHosting() ?
+                      tr("Max buffer size changed to %1 %2").arg(buffer / 100.0).arg(frame_str) :
+                      tr("Buffer size changed to %1 %2").arg(buffer / 100.0).arg(frame_str), "");
+  }
+  else
+  {
+    DisplayMessage(m_host_input_authority && !IsHosting() ?
+                      tr("Max buffer size changed to %1").arg(buffer) :
+                      tr("Buffer size changed to %1").arg(buffer), "");
+  }
 
   m_buffer_size = static_cast<int>(buffer);
 }

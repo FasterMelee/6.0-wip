@@ -14,6 +14,7 @@
 #include <thread>
 #include <type_traits>
 #include <vector>
+#include <cmath>
 
 #include <lzo/lzo1x.h>
 #include <mbedtls/md5.h>
@@ -35,6 +36,7 @@
 #include "Common/Version.h"
 #include "Core/Config/NetplaySettings.h"
 #include "Core/ConfigManager.h"
+#include "Core/Config/MainSettings.h"
 #include "Core/HW/EXI/EXI_DeviceIPL.h"
 #include "Core/HW/SI/SI.h"
 #include "Core/HW/SI/SI_DeviceGCController.h"
@@ -905,6 +907,14 @@ u32 NetPlayClient::GetPlayersMaxPing() const
       ->second.ping;
 }
 
+int NetPlayClient::ActualBufferSize() const
+{
+  if(Config::Get(Config::MAIN_POLL_ON_SIREAD))
+    return (int)std::floor(m_target_buffer_size / 100.0);
+
+  return m_target_buffer_size;
+}
+
 void NetPlayClient::Disconnect()
 {
   ENetEvent netEvent;
@@ -1457,7 +1467,7 @@ bool NetPlayClient::GetNetPads(const int pad_nb, const bool batching, GCPadStatu
     // we toggle the emulation speed too quickly, so to prevent this
     // we wait until the buffer has been over for at least 1 second.
 
-    const bool buffer_over_target = m_pad_buffer[pad_nb].Size() > m_target_buffer_size + 1;
+    const bool buffer_over_target = m_pad_buffer[pad_nb].Size() > ActualBufferSize() + 1;
     if (!buffer_over_target)
       m_buffer_under_target_last = std::chrono::steady_clock::now();
 
@@ -1520,7 +1530,7 @@ bool NetPlayClient::WiimoteUpdate(int _number, u8* data, const u8 size, u8 repor
 
         SendWiimoteState(_number, nw);
       } while (m_wiimote_buffer[_number].Size() <=
-               m_target_buffer_size * 200 /
+               ActualBufferSize() * 200 /
                    120);  // TODO: add a seperate setting for wiimote buffer?
     }
 
@@ -1560,7 +1570,7 @@ bool NetPlayClient::WiimoteUpdate(int _number, u8* data, const u8 size, u8 repor
       m_wiimote_buffer[_number].Pop(nw);
 
       ++tries;
-      if (tries > m_target_buffer_size * 200 / 120)
+      if (tries > ActualBufferSize() * 200 / 120)
         break;
     }
 
@@ -1604,7 +1614,7 @@ bool NetPlayClient::PollLocalPad(const int local_pad, sf::Packet& packet)
   {
     // adjust the buffer either up or down
     // inserting multiple padstates or dropping states
-    while (m_pad_buffer[ingame_pad].Size() <= m_target_buffer_size)
+    while (m_pad_buffer[ingame_pad].Size() <= ActualBufferSize())
     {
       // add to buffer
       m_pad_buffer[ingame_pad].Push(pad_status);
@@ -1849,6 +1859,12 @@ void NetPlayClient::AdjustPadBufferSize(const unsigned int size)
   m_dialog->OnPadBufferChanged(size);
 }
 
+unsigned int NetPlayClient::GetBufferSizeForPort(int port)
+{
+  // TODO: independent buffers
+  return m_target_buffer_size;
+}
+
 bool IsNetPlayRunning()
 {
   return netplay_client != nullptr;
@@ -1967,4 +1983,16 @@ int SerialInterface::CSIDevice_GCController::NetPlay_InGamePadToLocalPad(int num
     return NetPlay::netplay_client->InGamePadToLocalPad(numPAD);
 
   return numPAD;
+}
+
+// called from ---CPU--- thread
+// return the buffer for the port at pad_num
+unsigned int SerialInterface::NetPlay_GetBufferForPort(int pad_num)
+{
+  std::lock_guard<std::mutex> lk(NetPlay::crit_netplay_client);
+
+  if (NetPlay::netplay_client)
+    return NetPlay::netplay_client->GetBufferSizeForPort(pad_num);
+
+  return 0;
 }

@@ -820,4 +820,10 @@ void FakeVIUpdate(u32 xfb_address, u32 fb_width, u32 fb_height)
   }
 }
 
+bool IsPal50()
+{
+  // https://www.gc-forever.com/yagcd/chap5.html
+  return m_VerticalTimingRegister.ACV == 0x11F5;
+}
+
 }  // namespace VideoInterface

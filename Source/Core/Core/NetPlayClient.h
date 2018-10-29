@@ -127,6 +127,8 @@ public:
 
   void AdjustPadBufferSize(unsigned int size);
 
+  unsigned int GetBufferSizeForPort(int port);
+
 protected:
   void ClearBuffers();
 
@@ -206,6 +208,7 @@ private:
   void ComputeMD5(const std::string& file_identifier);
   void DisplayPlayersPing();
   u32 GetPlayersMaxPing() const;
+  int ActualBufferSize() const;
 
   bool m_is_connected = false;
   ConnectionState m_connection_state = ConnectionState::Failure;

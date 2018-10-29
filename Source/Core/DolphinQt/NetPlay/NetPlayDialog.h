@@ -9,6 +9,16 @@
 #include "Core/NetPlayClient.h"
 #include "VideoCommon/OnScreenDisplay.h"
 
+#include "Common/Config/Config.h"
+#include "Core/Config/GraphicsSettings.h"
+#include "Core/Config/MainSettings.h"
+#include "Core/Config/NetplaySettings.h"
+#include "Core/Config/SYSCONFSettings.h"
+#include "Core/ConfigLoaders/GameConfigLoader.h"
+#include "Core/ConfigManager.h"
+
+#include "UICommon/GameFile.h"
+
 class MD5Dialog;
 class GameListModel;
 class PadMappingDialog;
@@ -20,6 +30,7 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QSpinBox;
+class QDoubleSpinBox;
 class QSplitter;
 class QTableWidget;
 class QTextEdit;
@@ -82,6 +93,31 @@ private:
 
   void SetGame(const QString& game_path);
 
+  template<class T>
+  T GetConfigOptionWithSelectedGame(const Config::ConfigInfo<T>& info)
+  {
+    const auto game = FindGameFile(m_current_game);
+
+    // TODO: maybe not the right way to do it but it'll work for FM?
+    if(game)
+    {
+      Config::AddLayer(
+          ConfigLoaders::GenerateGlobalGameConfigLoader(game->GetGameID(), game->GetRevision()));
+      Config::AddLayer(
+          ConfigLoaders::GenerateLocalGameConfigLoader(game->GetGameID(), game->GetRevision()));
+    }
+
+    T value = Config::Get(info);
+
+    if(game)
+    {
+      Config::RemoveLayer(Config::LayerType::GlobalGame);
+      Config::RemoveLayer(Config::LayerType::LocalGame);
+    }
+
+    return value;
+  }
+
   // Chat
   QGroupBox* m_chat_box;
   QTextEdit* m_chat_edit;
@@ -102,7 +138,7 @@ private:
   QToolButton* m_md5_button;
   QPushButton* m_start_button;
   QLabel* m_buffer_label;
-  QSpinBox* m_buffer_size_box;
+  QDoubleSpinBox* m_buffer_size_box;
   QCheckBox* m_save_sd_box;
   QCheckBox* m_load_wii_box;
   QCheckBox* m_sync_save_data_box;
@@ -126,4 +162,5 @@ private:
   int m_player_count = 0;
   int m_old_player_count = 0;
   bool m_host_input_authority = false;
+  bool m_has_gotten_initial_pad_buffer_size = false;
 };

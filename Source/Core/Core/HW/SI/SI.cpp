@@ -21,6 +21,7 @@
 #include "Core/Movie.h"
 #include "Core/NetPlayProto.h"
 #include "Core/Config/MainSettings.h"
+#include "Core/HW/VideoInterface.h"
 
 #include "InputCommon/ControllerInterface/ControllerInterface.h"
 #include "InputCommon/GCAdapter.h"
@@ -207,6 +208,7 @@ union USIEXIClockCount
 
 static CoreTiming::EventType* s_change_device_event;
 static CoreTiming::EventType* s_tranfer_pending_event;
+static CoreTiming::EventType* s_poll_event;
 
 // STATE_TO_SAVE
 static std::array<SSIChannel, MAX_SI_CHANNELS> s_channel;
@@ -361,6 +363,35 @@ void DoState(PointerWrap& p)
   p.Do(s_si_buffer);
 }
 
+static void PollControllers(bool set_registers)
+{
+  NetPlay::SetSIPollBatching(true);
+
+  s_status_reg.RDST0 =
+      !!s_channel[0].device->GetData(s_channel[0].in_hi.hex, s_channel[0].in_lo.hex);
+  s_status_reg.RDST1 =
+      !!s_channel[1].device->GetData(s_channel[1].in_hi.hex, s_channel[1].in_lo.hex);
+  s_status_reg.RDST2 =
+      !!s_channel[2].device->GetData(s_channel[2].in_hi.hex, s_channel[2].in_lo.hex);
+  s_status_reg.RDST3 =
+      !!s_channel[3].device->GetData(s_channel[3].in_hi.hex, s_channel[3].in_lo.hex);
+
+  NetPlay::SetSIPollBatching(false);
+
+  if(!set_registers)
+  {
+    s_status_reg.RDST0 =
+    s_status_reg.RDST1 =
+    s_status_reg.RDST2 =
+    s_status_reg.RDST3 = true;
+  }
+}
+
+static void PollEvent(u64 userdata, s64 cyclesLate)
+{
+  PollControllers(userdata == true);
+}
+
 void Init()
 {
   for (int i = 0; i < MAX_SI_CHANNELS; i++)
@@ -407,6 +438,7 @@ void Init()
 
   s_change_device_event = CoreTiming::RegisterEvent("ChangeSIDevice", ChangeDeviceCallback);
   s_tranfer_pending_event = CoreTiming::RegisterEvent("SITransferPending", RunSIBuffer);
+  s_poll_event = CoreTiming::RegisterEvent("Poll", PollEvent);
 }
 
 void Shutdown()
@@ -471,20 +503,20 @@ void RegisterMMIO(MMIO::Mapping* mmio, u32 base)
                       {
                         if(s_channel[c].device->GetDeviceType() != SIDEVICE_NONE)
                         {
-                          // Hinting NetPlay that all controllers will be polled in
-                          // succession, in order to optimize networking
-                          NetPlay::SetSIPollBatching(true);
+                          if(NetPlay::IsNetPlayRunning() && NetPlay_GetBufferForPort(c) % 100 != 0)
+                          {
+                            // TODO: maybe this should measure the time between polls instead of assuming 50/60
+                            float next_poll_in_ms = 1000.0 / 59.97;
+                            if(VideoInterface::IsPal50())
+                              next_poll_in_ms = 1000.0 / 50;
 
-                          // Update channels and set the status bit if there's new data
-                          s_channel[0].device->GetData(s_channel[0].in_hi.hex, s_channel[0].in_lo.hex);
-                          s_channel[1].device->GetData(s_channel[1].in_hi.hex, s_channel[1].in_lo.hex);
-                          s_channel[2].device->GetData(s_channel[2].in_hi.hex, s_channel[2].in_lo.hex);
-                          s_channel[3].device->GetData(s_channel[3].in_hi.hex, s_channel[3].in_lo.hex);
+                            int remainder = NetPlay_GetBufferForPort(c) % 100;
+                            next_poll_in_ms -= next_poll_in_ms * (remainder / 100);
 
-                          // Polling finished
-                          NetPlay::SetSIPollBatching(false);
-
-                          // TODO: subframe polling
+                            CoreTiming::ScheduleEvent(next_poll_in_ms * (SystemTimers::GetTicksPerSecond() / 1000), s_poll_event, false);
+                          }
+                          else
+                            PollControllers(false);
                           break;
                         }
                       }
@@ -670,24 +702,7 @@ void UpdateDevices()
     }
   }
   else
-  {
-    // Hinting NetPlay that all controllers will be polled in
-    // succession, in order to optimize networking
-    NetPlay::SetSIPollBatching(true);
-
-    // Update channels and set the status bit if there's new data
-    s_status_reg.RDST0 =
-        !!s_channel[0].device->GetData(s_channel[0].in_hi.hex, s_channel[0].in_lo.hex);
-    s_status_reg.RDST1 =
-        !!s_channel[1].device->GetData(s_channel[1].in_hi.hex, s_channel[1].in_lo.hex);
-    s_status_reg.RDST2 =
-        !!s_channel[2].device->GetData(s_channel[2].in_hi.hex, s_channel[2].in_lo.hex);
-    s_status_reg.RDST3 =
-        !!s_channel[3].device->GetData(s_channel[3].in_hi.hex, s_channel[3].in_lo.hex);
-
-    // Polling finished
-    NetPlay::SetSIPollBatching(false);
-  }
+    PollControllers(true);
 
   UpdateInterrupts();
 }
