@@ -66,6 +66,7 @@ void GameConfigWidget::CreateWidgets()
   m_sync_gpu = new QCheckBox(tr("Synchronize GPU thread"));
   m_enable_fast_disc = new QCheckBox(tr("Speed up Disc Transfer Rate"));
   m_use_dsp_hle = new QCheckBox(tr("DSP HLE Emulation (fast)"));
+  m_poll_on_siread = new QCheckBox(tr("Poll on SI Register Read"));
   m_deterministic_dual_core = new QComboBox;
 
   for (const auto& item : {tr("Not Set"), tr("auto"), tr("none"), tr("fake-completion")})
@@ -80,6 +81,11 @@ void GameConfigWidget::CreateWidgets()
                             "in Dual core mode. (ON = Compatible, OFF = Fast)"));
   m_enable_fast_disc->setToolTip(tr("Enable fast disc access. This can cause crashes and other "
                                     "problems in some games. (ON = Fast, OFF = Compatible)"));
+  m_poll_on_siread->setToolTip(tr("Causes polling to happen when the game reads from the SI register "
+                                    "(specifically, the high bits of the SI register) rather than at a consistent (often 240 hz) rate. "
+                                    "This reduces polling rate and input lag to a minimum since Dolphin only polls when it absolutely needs to "
+                                    "but is technically inaccurate to how polling on a GameCube works. Because of this, problems can occur in some games. "
+                                    "(ON = Fast, OFF = Compatible)"));
 
   core_layout->addWidget(m_enable_dual_core, 0, 0);
   core_layout->addWidget(m_enable_mmu, 1, 0);
@@ -87,8 +93,9 @@ void GameConfigWidget::CreateWidgets()
   core_layout->addWidget(m_sync_gpu, 3, 0);
   core_layout->addWidget(m_enable_fast_disc, 4, 0);
   core_layout->addWidget(m_use_dsp_hle, 5, 0);
-  core_layout->addWidget(new QLabel(tr("Deterministic dual core:")), 6, 0);
-  core_layout->addWidget(m_deterministic_dual_core, 6, 1);
+  core_layout->addWidget(m_poll_on_siread, 6, 0);
+  core_layout->addWidget(new QLabel(tr("Deterministic dual core:")), 7, 0);
+  core_layout->addWidget(m_deterministic_dual_core, 7, 1);
 
   // Stereoscopy
   auto* stereoscopy_box = new QGroupBox(tr("Stereoscopy"));
@@ -142,7 +149,7 @@ void GameConfigWidget::CreateWidgets()
   button_layout->addWidget(m_view_default_config);
 
   for (QCheckBox* item : {m_enable_dual_core, m_enable_mmu, m_enable_fprf, m_sync_gpu,
-                          m_enable_fast_disc, m_use_dsp_hle, m_use_monoscopic_shadows})
+                          m_enable_fast_disc, m_use_dsp_hle, m_poll_on_siread, m_use_monoscopic_shadows})
     item->setTristate(true);
 
   setLayout(layout);
@@ -156,7 +163,7 @@ void GameConfigWidget::ConnectWidgets()
   connect(m_view_default_config, &QPushButton::pressed, this, &GameConfigWidget::ViewDefaultConfig);
 
   for (QCheckBox* box : {m_enable_dual_core, m_enable_mmu, m_enable_fprf, m_sync_gpu,
-                         m_enable_fast_disc, m_use_dsp_hle, m_use_monoscopic_shadows})
+                         m_enable_fast_disc, m_use_dsp_hle, m_poll_on_siread, m_use_monoscopic_shadows})
     connect(box, &QCheckBox::stateChanged, this, &GameConfigWidget::SaveSettings);
 
   connect(m_deterministic_dual_core,
@@ -230,6 +237,7 @@ void GameConfigWidget::LoadSettings()
   LoadCheckBox(m_sync_gpu, "Core", "SyncGPU");
   LoadCheckBox(m_enable_fast_disc, "Core", "FastDiscSpeed");
   LoadCheckBox(m_use_dsp_hle, "Core", "DSPHLE");
+  LoadCheckBox(m_poll_on_siread, "Core", "PollOnSIRead");
 
   std::string determinism_mode;
 
@@ -280,6 +288,7 @@ void GameConfigWidget::SaveSettings()
   SaveCheckBox(m_sync_gpu, "Core", "SyncGPU");
   SaveCheckBox(m_enable_fast_disc, "Core", "FastDiscSpeed");
   SaveCheckBox(m_use_dsp_hle, "Core", "DSPHLE");
+  SaveCheckBox(m_poll_on_siread, "Core", "PollOnSIRead");
 
   int determinism_num = m_deterministic_dual_core->currentIndex();
 

@@ -107,7 +107,6 @@ private:
   QCheckBox* m_load_wii_box;
   QCheckBox* m_sync_save_data_box;
   QCheckBox* m_record_input_box;
-  QCheckBox* m_reduce_polling_rate_box;
   QCheckBox* m_strict_settings_sync_box;
   QCheckBox* m_host_input_authority_box;
   QPushButton* m_quit_button;

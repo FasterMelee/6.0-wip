@@ -732,13 +732,7 @@ void Update(u64 ticks)
   if (s_half_line_of_next_si_poll == s_half_line_count)
   {
     SerialInterface::UpdateDevices();
-
-    // If this setting is enabled, only poll twice per field instead of what the game wanted. It may
-    // be set during NetPlay or Movie playback.
-    if (Config::Get(Config::MAIN_REDUCE_POLLING_RATE))
-      s_half_line_of_next_si_poll += GetHalfLinesPerEvenField() / 2;
-    else
-      s_half_line_of_next_si_poll += SerialInterface::GetPollXLines();
+    s_half_line_of_next_si_poll += SerialInterface::GetPollXLines();
   }
   if (s_half_line_count == s_even_field_first_hl)
   {

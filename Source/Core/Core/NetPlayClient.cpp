@@ -498,7 +498,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
       packet >> m_net_settings.m_CopyWiiSave;
       packet >> m_net_settings.m_OCEnable;
       packet >> m_net_settings.m_OCFactor;
-      packet >> m_net_settings.m_ReducePollingRate;
+      packet >> m_net_settings.m_PollOnSIRead;
 
       int tmp;
       packet >> tmp;

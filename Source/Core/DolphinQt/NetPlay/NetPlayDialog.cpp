@@ -98,7 +98,6 @@ void NetPlayDialog::CreateMainLayout()
   m_load_wii_box = new QCheckBox(tr("Load Wii Save"));
   m_sync_save_data_box = new QCheckBox(tr("Sync Saves"));
   m_record_input_box = new QCheckBox(tr("Record inputs"));
-  m_reduce_polling_rate_box = new QCheckBox(tr("Reduce Polling Rate"));
   m_strict_settings_sync_box = new QCheckBox(tr("Strict Settings Sync"));
   m_host_input_authority_box = new QCheckBox(tr("Host Input Authority"));
   m_buffer_label = new QLabel(tr("Buffer:"));
@@ -137,9 +136,6 @@ void NetPlayDialog::CreateMainLayout()
   m_md5_button->setPopupMode(QToolButton::MenuButtonPopup);
   m_md5_button->setMenu(menu);
 
-  m_reduce_polling_rate_box->setToolTip(
-      tr("This will reduce bandwidth usage by polling GameCube controllers only twice per frame. "
-         "Does not affect Wii Remotes."));
   m_strict_settings_sync_box->setToolTip(
       tr("This will sync additional graphics settings, and force everyone to the same internal "
          "resolution.\nMay prevent desync in some games that use EFB reads. Please ensure everyone "
@@ -171,7 +167,6 @@ void NetPlayDialog::CreateMainLayout()
   options_boxes->addWidget(m_load_wii_box);
   options_boxes->addWidget(m_sync_save_data_box);
   options_boxes->addWidget(m_record_input_box);
-  options_boxes->addWidget(m_reduce_polling_rate_box);
   options_boxes->addWidget(m_strict_settings_sync_box);
   options_boxes->addWidget(m_host_input_authority_box);
 
@@ -369,7 +364,6 @@ void NetPlayDialog::OnStart()
   settings.m_CopyWiiSave = m_load_wii_box->isChecked();
   settings.m_OCEnable = Config::Get(Config::MAIN_OVERCLOCK_ENABLE);
   settings.m_OCFactor = Config::Get(Config::MAIN_OVERCLOCK);
-  settings.m_ReducePollingRate = m_reduce_polling_rate_box->isChecked();
   settings.m_EXIDevice[0] =
       static_cast<ExpansionInterface::TEXIDevices>(Config::Get(Config::MAIN_SLOT_A));
   settings.m_EXIDevice[1] =
@@ -394,6 +388,7 @@ void NetPlayDialog::OnStart()
   settings.m_SyncGpuOverclock = Config::Get(Config::MAIN_SYNC_GPU_OVERCLOCK);
   settings.m_JITFollowBranch = Config::Get(Config::MAIN_JIT_FOLLOW_BRANCH);
   settings.m_FastDiscSpeed = Config::Get(Config::MAIN_FAST_DISC_SPEED);
+  settings.m_PollOnSIRead = Config::Get(Config::MAIN_POLL_ON_SIREAD);
   settings.m_MMU = Config::Get(Config::MAIN_MMU);
   settings.m_Fastmem = Config::Get(Config::MAIN_FASTMEM);
   settings.m_SkipIPL = Config::Get(Config::MAIN_SKIP_IPL) ||
@@ -465,7 +460,6 @@ void NetPlayDialog::show(std::string nickname, bool use_traversal)
   m_save_sd_box->setHidden(!is_hosting);
   m_load_wii_box->setHidden(!is_hosting);
   m_sync_save_data_box->setHidden(!is_hosting);
-  m_reduce_polling_rate_box->setHidden(!is_hosting);
   m_strict_settings_sync_box->setHidden(!is_hosting);
   m_host_input_authority_box->setHidden(!is_hosting);
   m_kick_button->setHidden(!is_hosting);
@@ -739,7 +733,6 @@ void NetPlayDialog::SetOptionsEnabled(bool enabled)
     m_save_sd_box->setEnabled(enabled);
     m_sync_save_data_box->setEnabled(enabled);
     m_assign_ports_button->setEnabled(enabled);
-    m_reduce_polling_rate_box->setEnabled(enabled);
     m_strict_settings_sync_box->setEnabled(enabled);
     m_host_input_authority_box->setEnabled(enabled);
   }

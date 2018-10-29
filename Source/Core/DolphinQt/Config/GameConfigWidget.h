@@ -55,6 +55,7 @@ private:
   QCheckBox* m_enable_fast_disc;
   QCheckBox* m_use_dsp_hle;
   QComboBox* m_deterministic_dual_core;
+  QCheckBox* m_poll_on_siread;
 
   // Stereoscopy
   QSlider* m_depth_slider;

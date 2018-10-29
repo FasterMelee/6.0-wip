@@ -1012,7 +1012,7 @@ bool NetPlayServer::StartGame()
   spac << m_settings.m_CopyWiiSave;
   spac << m_settings.m_OCEnable;
   spac << m_settings.m_OCFactor;
-  spac << m_settings.m_ReducePollingRate;
+  spac << m_settings.m_PollOnSIRead;
   spac << m_settings.m_EXIDevice[0];
   spac << m_settings.m_EXIDevice[1];
   spac << m_settings.m_EFBAccessEnable;
