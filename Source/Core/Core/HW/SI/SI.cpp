@@ -513,6 +513,8 @@ void RegisterMMIO(MMIO::Mapping* mmio, u32 base)
                             int remainder = NetPlay_GetBufferForPort(c) % 100;
                             next_poll_in_ms -= next_poll_in_ms * (remainder / 100);
 
+                            // TODO: this won't be reproduced when playing a movie
+                            // Maybe the old method of just calling the NetPlay_Inputs thing will work?
                             CoreTiming::ScheduleEvent(next_poll_in_ms * (SystemTimers::GetTicksPerSecond() / 1000), s_poll_event, false);
                           }
                           else

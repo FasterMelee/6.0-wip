@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <vector>
 #include <QDialog>
 
 #include "Core/NetPlayClient.h"
+#include "Core/NetPlayServer.h"
 #include "VideoCommon/OnScreenDisplay.h"
 
 #include "Common/Config/Config.h"
@@ -118,6 +120,8 @@ private:
     return value;
   }
 
+  bool MeetsAutoBufferConditions();
+
   // Chat
   QGroupBox* m_chat_box;
   QTextEdit* m_chat_edit;
@@ -129,6 +133,7 @@ private:
   QComboBox* m_room_box;
   QLabel* m_hostcode_label;
   QPushButton* m_hostcode_action_button;
+  QLabel* m_longest_route_label;
   QTableWidget* m_players_list;
   QPushButton* m_kick_button;
   QPushButton* m_assign_ports_button;
@@ -139,6 +144,7 @@ private:
   QPushButton* m_start_button;
   QLabel* m_buffer_label;
   QDoubleSpinBox* m_buffer_size_box;
+  QPushButton* m_auto_buffer_button;
   QCheckBox* m_save_sd_box;
   QCheckBox* m_load_wii_box;
   QCheckBox* m_sync_save_data_box;
@@ -163,4 +169,11 @@ private:
   int m_old_player_count = 0;
   bool m_host_input_authority = false;
   bool m_has_gotten_initial_pad_buffer_size = false;
+
+  bool CalculateBufferFromSamples(const std::vector<NetPlay::NetPlayServer::NetRoute>& samples);
+  void SampleAutoBuffer();
+
+  QTimer* m_auto_buffer_sample_timer;
+  std::vector<NetPlay::NetPlayServer::NetRoute> m_auto_buffer_samples;
+  constexpr static int m_auto_buffer_sample_amount = 3;
 };

@@ -62,9 +62,6 @@ public:
   std::unordered_set<std::string> GetInterfaceSet() const;
   std::string GetInterfaceHost(const std::string& inter) const;
 
-  bool is_connected = false;
-
-private:
   class Client
   {
   public:
@@ -84,6 +81,21 @@ private:
     bool IsHost() const { return pid == 1; }
   };
 
+  struct NetRoute
+  {
+    // in ms
+    u32 ping;
+
+    // can be nullptr
+    const Client* from;
+    const Client* to;
+  };
+
+  NetRoute FindLongestRoute() const;
+
+  bool is_connected = false;
+
+private:
   bool SyncSaveData();
   bool CompressFileIntoPacket(const std::string& file_path, sf::Packet& packet);
   bool CompressBufferIntoPacket(const std::vector<u8>& in_buffer, sf::Packet& packet);

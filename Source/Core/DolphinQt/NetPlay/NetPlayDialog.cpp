@@ -25,6 +25,7 @@
 #include <QTableWidget>
 #include <QTextBrowser>
 #include <QToolButton>
+#include <QTimer>
 
 #include <sstream>
 
@@ -33,7 +34,6 @@
 #include "Common/TraversalClient.h"
 
 #include "Core/Core.h"
-#include "Core/NetPlayServer.h"
 
 #include "DolphinQt/GameList/GameListModel.h"
 #include "DolphinQt/NetPlay/GameListDialog.h"
@@ -86,6 +86,7 @@ void NetPlayDialog::CreateMainLayout()
   m_md5_button = new QToolButton;
   m_start_button = new QPushButton(tr("Start"));
   m_buffer_size_box = new QDoubleSpinBox;
+  m_auto_buffer_button = new QPushButton(tr("Auto"));
   m_save_sd_box = new QCheckBox(tr("Write save/SD data"));
   m_load_wii_box = new QCheckBox(tr("Load Wii Save"));
   m_sync_save_data_box = new QCheckBox(tr("Sync Saves"));
@@ -115,6 +116,18 @@ void NetPlayDialog::CreateMainLayout()
   }
 
   m_buffer_size_box->setRange(0, 10000);
+
+  m_auto_buffer_button->setToolTip(tr(
+    "Calculates buffer automatically based on the longest network route.\n"
+    "Requires that:\n"
+    "* The game being played has its polling method set to On SI Register Read\n"
+    "* The game being played is an NTSC game (runs at 60hz)"));
+
+  m_auto_buffer_sample_timer = new QTimer(this);
+  m_auto_buffer_sample_timer->setInterval(1000);
+  m_auto_buffer_sample_timer->setSingleShot(false);
+
+  connect(m_auto_buffer_sample_timer, &QTimer::timeout, this, &NetPlayDialog::SampleAutoBuffer);
 
   auto* default_button = new QAction(tr("Calculate MD5 hash"), m_md5_button);
 
@@ -163,24 +176,35 @@ void NetPlayDialog::CreateMainLayout()
   m_splitter->addWidget(m_chat_box);
   m_splitter->addWidget(m_players_box);
 
-  auto* options_widget = new QGridLayout;
-  auto* options_boxes = new FlowLayout;
+  auto* options_widget = new QBoxLayout(QBoxLayout::TopToBottom);
+  auto* top_widget = new QBoxLayout(QBoxLayout::LeftToRight);
+  auto* buffer_widget = new QBoxLayout(QBoxLayout::LeftToRight);
+  auto* bottom_widget = new FlowLayout;
 
-  options_widget->addWidget(m_start_button, 0, 0, Qt::AlignVCenter);
-  options_widget->addWidget(m_buffer_label, 0, 1, Qt::AlignVCenter);
-  options_widget->addWidget(m_buffer_size_box, 0, 2, Qt::AlignVCenter);
-  options_widget->addWidget(m_quit_button, 0, 4, Qt::AlignVCenter);
-  options_boxes->addWidget(m_save_sd_box);
-  options_boxes->addWidget(m_load_wii_box);
-  options_boxes->addWidget(m_sync_save_data_box);
-  options_boxes->addWidget(m_record_input_box);
-  options_boxes->addWidget(m_strict_settings_sync_box);
-  options_boxes->addWidget(m_host_input_authority_box);
+  auto* buffer_box = new QBoxLayout(QBoxLayout::LeftToRight);
+  buffer_box->addWidget(m_buffer_label);
+  buffer_box->addWidget(m_buffer_size_box);
+  buffer_widget->addLayout(buffer_box);
+  buffer_widget->addWidget(m_auto_buffer_button);
 
-  options_widget->addLayout(options_boxes, 0, 3, Qt::AlignTop);
-  options_widget->setColumnStretch(3, 1000);
+  buffer_widget->setAlignment(Qt::AlignLeft);
 
-  m_main_layout->addLayout(options_widget, 2, 0, 1, -1, Qt::AlignRight);
+  top_widget->addWidget(m_start_button, 0, Qt::AlignLeft);
+  top_widget->addLayout(buffer_widget, 0);
+  top_widget->addStretch();
+  top_widget->addWidget(m_quit_button, 0, Qt::AlignRight);
+
+  bottom_widget->addWidget(m_save_sd_box);
+  bottom_widget->addWidget(m_load_wii_box);
+  bottom_widget->addWidget(m_sync_save_data_box);
+  bottom_widget->addWidget(m_record_input_box);
+  bottom_widget->addWidget(m_strict_settings_sync_box);
+  bottom_widget->addWidget(m_host_input_authority_box);
+
+  options_widget->addLayout(top_widget);
+  options_widget->addLayout(bottom_widget);
+
+  m_main_layout->addLayout(options_widget, 2, 0, 1, -1);
   m_main_layout->setRowStretch(1, 1000);
 
   setLayout(m_main_layout);
@@ -213,6 +237,7 @@ void NetPlayDialog::CreatePlayersLayout()
   m_room_box = new QComboBox;
   m_hostcode_label = new QLabel;
   m_hostcode_action_button = new QPushButton(tr("Copy"));
+  m_longest_route_label = new QLabel;
   m_players_list = new QTableWidget;
   m_kick_button = new QPushButton(tr("Kick Player"));
   m_assign_ports_button = new QPushButton(tr("Assign Controller Ports"));
@@ -230,9 +255,10 @@ void NetPlayDialog::CreatePlayersLayout()
   layout->addWidget(m_room_box, 0, 0);
   layout->addWidget(m_hostcode_label, 0, 1);
   layout->addWidget(m_hostcode_action_button, 0, 2);
-  layout->addWidget(m_players_list, 1, 0, 1, -1);
-  layout->addWidget(m_kick_button, 2, 0, 1, -1);
-  layout->addWidget(m_assign_ports_button, 3, 0, 1, -1);
+  layout->addWidget(m_longest_route_label, 1, 0, 1, -1);
+  layout->addWidget(m_players_list, 2, 0, 1, -1);
+  layout->addWidget(m_kick_button, 3, 0);
+  layout->addWidget(m_assign_ports_button, 3, 1);
 
   m_players_box->setLayout(layout);
 }
@@ -283,6 +309,14 @@ void NetPlayDialog::ConnectWidgets()
             else
               client->AdjustPadBufferSize(ivalue);
           });
+
+  connect(m_auto_buffer_button, &QPushButton::clicked, this,
+    [this] {
+      m_auto_buffer_button->setEnabled(false);
+      m_buffer_size_box->setEnabled(false);
+      m_auto_buffer_sample_timer->start();
+      SampleAutoBuffer();
+    });
 
   connect(m_host_input_authority_box, &QCheckBox::toggled, [this](bool checked) {
     auto server = Settings::Instance().GetNetPlayServer();
@@ -480,8 +514,11 @@ void NetPlayDialog::show(std::string nickname, bool use_traversal)
   m_room_box->setHidden(!is_hosting);
   m_hostcode_label->setHidden(!is_hosting);
   m_hostcode_action_button->setHidden(!is_hosting);
+  m_longest_route_label->setHidden(!is_hosting);
   m_game_button->setEnabled(is_hosting);
   m_kick_button->setEnabled(false);
+  m_auto_buffer_button->setHidden(!is_hosting);
+  m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions());
 
   m_buffer_label->setText(is_hosting ? tr("Buffer:") : tr("Max Buffer:"));
 
@@ -655,6 +692,23 @@ void NetPlayDialog::UpdateGUI()
     UpdateDiscordPresence();
     m_old_player_count = m_player_count;
   }
+
+  if(IsHosting())
+  {
+    NetPlay::NetPlayServer::NetRoute longest_route = Settings::Instance().GetNetPlayServer()->FindLongestRoute();
+
+    if(longest_route.from == nullptr)
+      m_longest_route_label->setText(tr("Longest route over network: (none)"));
+    else if(longest_route.to == nullptr)
+      m_longest_route_label->setText(tr("Longest route over network: %1 \u2192 Server (%3 ms)").
+        arg(QString::fromStdString(longest_route.from->name)).
+        arg(longest_route.ping));
+    else
+      m_longest_route_label->setText(tr("Longest route over network: %1 \u2192 Server \u2192 %2 (%3 ms)").
+        arg(QString::fromStdString(longest_route.from->name)).
+        arg(QString::fromStdString(longest_route.to->name)).
+        arg(longest_route.ping));
+  }
 }
 
 // NetPlayUI methods
@@ -739,6 +793,8 @@ void NetPlayDialog::OnMsgChangeGame(const std::string& title)
       m_buffer_size_box->setDecimals(0);
       m_buffer_size_box->setSuffix(QString::fromStdString(""));
     }
+
+    m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions());
 
     if(has_old_game && old_game_polled_on_siread != GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
     {
@@ -843,6 +899,7 @@ void NetPlayDialog::OnHostInputAuthorityChanged(bool enabled)
     {
       m_buffer_size_box->setEnabled(enable_buffer);
       m_buffer_label->setEnabled(enable_buffer);
+      m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions() && enable_buffer);
       m_buffer_size_box->setHidden(false);
       m_buffer_label->setHidden(false);
 
@@ -999,4 +1056,75 @@ void NetPlayDialog::AbortMD5()
     m_md5_dialog->close();
     m_md5_button->setEnabled(true);
   });
+}
+
+bool NetPlayDialog::MeetsAutoBufferConditions()
+{
+  return FindGameFile(m_current_game) != nullptr &&
+    // TODO: Melee PAL60
+    FindGameFile(m_current_game)->GetRegion() != DiscIO::Region::PAL &&
+    GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD);
+}
+
+bool NetPlayDialog::CalculateBufferFromSamples(const std::vector<NetPlay::NetPlayServer::NetRoute>& samples)
+{
+  int first_sample = samples[0].ping;
+  int sample_difference = first_sample * samples.size();
+
+  for(int i = 1; i < samples.size(); i++)
+    sample_difference -= samples[i].ping;
+
+  sample_difference = std::abs(sample_difference);
+
+  if(sample_difference < 100)
+  {
+    int average_ping = 0;
+    for(int i = 0; i < samples.size(); i++)
+      average_ping += samples[i].ping;
+
+    average_ping /= samples.size();
+
+    DisplayMessage(tr("Average ping out of 3 samples was %1 ms").arg(average_ping), "green");
+
+    int auto_buffer = (int)(((average_ping * 1.1) / (1000.0 / 60.0)) * 100);
+    Settings::Instance().GetNetPlayServer()->AdjustPadBufferSize(auto_buffer);
+    return true;
+  }
+
+  return false;
+}
+
+void NetPlayDialog::SampleAutoBuffer()
+{
+  m_auto_buffer_samples.push_back(Settings::Instance().GetNetPlayServer()->FindLongestRoute());
+  NetPlay::NetPlayServer::NetRoute latest_sample = m_auto_buffer_samples[m_auto_buffer_samples.size() - 1];
+
+  if(latest_sample.from == nullptr || latest_sample.to == nullptr)
+  {
+    DisplayMessage(tr("Unable to calculate auto buffer (at least 2 players are required)"), "red");
+    m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions());
+    m_buffer_size_box->setEnabled(true);
+    m_auto_buffer_samples.clear();
+    m_auto_buffer_sample_timer->stop();
+    return;
+  }
+
+  DisplayMessage(tr("Sample %1/%2 - %3 \u2192 Server \u2192 %4 at %5 ms").
+    arg(m_auto_buffer_samples.size()).
+    arg(m_auto_buffer_sample_amount).
+    arg(QString::fromStdString(latest_sample.from->name)).
+    arg(QString::fromStdString(latest_sample.to->name)).
+    arg(latest_sample.ping), "green");
+
+  if(m_auto_buffer_samples.size() >= m_auto_buffer_sample_amount)
+  {
+    if(!CalculateBufferFromSamples(m_auto_buffer_samples))
+        DisplayMessage(tr("Unable to calculate auto buffer because the ping times were too unstable."), "red");
+
+    m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions());
+    m_buffer_size_box->setEnabled(true);
+    m_auto_buffer_samples.clear();
+    m_auto_buffer_sample_timer->stop();
+    return;
+  }
 }

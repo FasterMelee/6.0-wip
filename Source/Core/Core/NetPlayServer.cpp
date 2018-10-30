@@ -1428,6 +1428,49 @@ void NetPlayServer::SetNetPlayUI(NetPlayUI* dialog)
   m_dialog = dialog;
 }
 
+NetPlayServer::NetRoute NetPlayServer::FindLongestRoute() const
+{
+  NetRoute longest = { 0 };
+
+  if(m_host_input_authority || m_players.size() == 1)
+  {
+    for (auto& from : m_players)
+    {
+      if(from.second.ping / 2 > longest.ping || longest.from == nullptr)
+      {
+        longest = {
+          from.second.ping / 2,
+          &from.second,
+          nullptr
+        };
+      }
+    }
+  }
+  else
+  {
+    for (auto& from : m_players)
+    {
+      for (auto& to : m_players)
+      {
+        // TODO: since this is calculating a "route" of player -> server -> player and not server -> player -> server -> player -> server,
+        // we make the assumption that half the time spend sending the ping packet was from the server to the player and the other half the opposite
+        // of course, this isn't accurate since it can take longer in one direction than the other but determining that is hard without the client and the server
+        // having exactly synchronized time
+        if(from != to && ((from.second.ping + to.second.ping) / 2 > longest.ping || longest.from == nullptr || longest.to == nullptr))
+        {
+          longest = {
+            (from.second.ping + to.second.ping) / 2 + 10 + (std::rand() % 10),
+            &from.second,
+            &to.second
+          };
+        }
+      }
+    }
+  }
+
+  return longest;
+}
+
 // called from ---GUI--- thread
 std::unordered_set<std::string> NetPlayServer::GetInterfaceSet() const
 {

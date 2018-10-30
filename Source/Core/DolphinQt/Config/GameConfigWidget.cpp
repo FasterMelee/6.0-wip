@@ -81,10 +81,10 @@ void GameConfigWidget::CreateWidgets()
                             "in Dual core mode. (ON = Compatible, OFF = Fast)"));
   m_enable_fast_disc->setToolTip(tr("Enable fast disc access. This can cause crashes and other "
                                     "problems in some games. (ON = Fast, OFF = Compatible)"));
-  m_poll_on_siread->setToolTip(tr("Causes polling to happen when the game reads from the SI register "
-                                    "(specifically, the high bits of the SI register) rather than at a consistent (often 240 hz) rate. "
-                                    "This reduces polling rate and input lag to a minimum since Dolphin only polls when it absolutely needs to "
-                                    "but is technically inaccurate to how polling on a GameCube works. Because of this, problems can occur in some games. "
+  m_poll_on_siread->setToolTip(tr("Causes polling to happen when the game reads from the SI register\n"
+                                    "(specifically, the high bits of the SI register) rather than at a consistent (often 240 hz) rate.\n"
+                                    "This reduces polling rate and input lag to a minimum since Dolphin only polls when it absolutely needs to\n"
+                                    "but is technically inaccurate to how polling on a GameCube works. Because of this, problems can occur in some games.\n"
                                     "(ON = Fast, OFF = Compatible)"));
 
   core_layout->addWidget(m_enable_dual_core, 0, 0);
