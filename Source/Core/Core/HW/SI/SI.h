@@ -43,7 +43,4 @@ void ChangeDeviceDeterministic(SIDevices device, int channel);
 SIDevices GetDeviceType(int channel);
 
 u32 GetPollXLines();
-
-unsigned int NetPlay_GetBufferForPort(int pad_num);
-
 }  // end of namespace SerialInterface

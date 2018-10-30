@@ -51,7 +51,7 @@ public:
   PadMappingArray GetWiimoteMapping() const;
   void SetWiimoteMapping(const PadMappingArray& mappings);
 
-  void AdjustPadBufferSize(unsigned int size);
+  void AdjustMinimumPadBufferSize(unsigned int size);
   void SetHostInputAuthority(bool enable);
 
   void KickPlayer(PlayerId player);
@@ -124,7 +124,7 @@ private:
   u32 m_ping_key = 0;
   bool m_update_pings = false;
   u32 m_current_game = 0;
-  unsigned int m_target_buffer_size = 0;
+  unsigned int m_minimum_buffer_size = 0;
   PadMappingArray m_pad_map;
   PadMappingArray m_wiimote_map;
   unsigned int m_save_data_synced_players = 0;

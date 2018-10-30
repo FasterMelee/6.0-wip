@@ -43,7 +43,8 @@ public:
   virtual void OnMsgChangeGame(const std::string& filename) = 0;
   virtual void OnMsgStartGame() = 0;
   virtual void OnMsgStopGame() = 0;
-  virtual void OnPadBufferChanged(u32 buffer) = 0;
+  virtual void OnMinimumPadBufferChanged(u32 buffer) = 0;
+  virtual void OnLocalPadBufferChanged(u32 buffer) = 0;
   virtual void OnHostInputAuthorityChanged(bool enabled) = 0;
   virtual void OnDesync(u32 frame, const std::string& player) = 0;
   virtual void OnConnectionLost() = 0;
@@ -125,10 +126,14 @@ public:
   const PadMappingArray& GetPadMapping() const;
   const PadMappingArray& GetWiimoteMapping() const;
 
-  void AdjustPadBufferSize(unsigned int size);
+  void AdjustLocalPadBufferSize(unsigned int size);
 
-  unsigned int GetBufferSizeForPort(int port);
+  unsigned int LocalBufferSize() const { return m_local_buffer_size; }
+  unsigned int MinimumBufferSize() const { return m_minimum_buffer_size; }
+  unsigned int ActualBufferSize() const;
 
+  bool PollLocalPad(int local_pad, sf::Packet& packet);
+  bool IsHostInputAuthority() const { return m_host_input_authority; }
 protected:
   void ClearBuffers();
 
@@ -163,7 +168,9 @@ protected:
   // try to keep in-flight to the other clients. In host input authority mode, this is how
   // many incoming input packets need to be queued up before the client starts
   // speeding up the game to drain the buffer.
-  unsigned int m_target_buffer_size = 20;
+  unsigned int m_local_buffer_size = 0;
+  // set by the host to determine the minimum buffer size a client can use
+  unsigned int m_minimum_buffer_size = 0;
   bool m_host_input_authority = false;
 
   Player* m_local_player = nullptr;
@@ -195,7 +202,6 @@ private:
   bool DecompressPacketIntoFile(sf::Packet& packet, const std::string& file_path);
   std::optional<std::vector<u8>> DecompressPacketIntoBuffer(sf::Packet& packet);
 
-  bool PollLocalPad(int local_pad, sf::Packet& packet);
   void SendPadHostPoll(PadMapping pad_num);
 
   void UpdateDevices();
@@ -208,7 +214,6 @@ private:
   void ComputeMD5(const std::string& file_identifier);
   void DisplayPlayersPing();
   u32 GetPlayersMaxPing() const;
-  int ActualBufferSize() const;
 
   bool m_is_connected = false;
   ConnectionState m_connection_state = ConnectionState::Failure;
@@ -234,4 +239,6 @@ private:
 
 void NetPlay_Enable(NetPlayClient* const np);
 void NetPlay_Disable();
+
+extern NetPlayClient* netplay_client;
 }  // namespace NetPlay

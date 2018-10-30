@@ -85,15 +85,18 @@ void NetPlayDialog::CreateMainLayout()
   m_game_button = new QPushButton;
   m_md5_button = new QToolButton;
   m_start_button = new QPushButton(tr("Start"));
-  m_buffer_size_box = new QDoubleSpinBox;
+  m_minimum_buffer_size_box = new QDoubleSpinBox;
   m_auto_buffer_button = new QPushButton(tr("Auto"));
+  m_local_buffer_size_box = new QDoubleSpinBox;
+  m_local_under_minimum_warning = new QPushButton;
   m_save_sd_box = new QCheckBox(tr("Write save/SD data"));
   m_load_wii_box = new QCheckBox(tr("Load Wii Save"));
   m_sync_save_data_box = new QCheckBox(tr("Sync Saves"));
   m_record_input_box = new QCheckBox(tr("Record inputs"));
   m_strict_settings_sync_box = new QCheckBox(tr("Strict Settings Sync"));
   m_host_input_authority_box = new QCheckBox(tr("Host Input Authority"));
-  m_buffer_label = new QLabel(tr("Buffer:"));
+  m_minimum_buffer_label = new QLabel(tr("Minimum Buffer:"));
+  m_local_buffer_label = new QLabel(tr("Buffer:"));
   m_quit_button = new QPushButton(tr("Quit"));
   m_splitter = new QSplitter(Qt::Horizontal);
 
@@ -102,20 +105,20 @@ void NetPlayDialog::CreateMainLayout()
 
   m_sync_save_data_box->setChecked(true);
 
-  if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+  if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD) && !m_host_input_authority)
   {
-    m_buffer_size_box->setDecimals(2);
-    m_buffer_size_box->setSingleStep(0.25);
-    m_buffer_size_box->setSuffix(tr(" frame(s)"));
+    m_minimum_buffer_size_box->setDecimals(2); m_local_buffer_size_box->setDecimals(2);
+    m_minimum_buffer_size_box->setSingleStep(0.25); m_local_buffer_size_box->setSingleStep(0.25);
+    m_minimum_buffer_size_box->setSuffix(tr(" frame(s)")); m_local_buffer_size_box->setSuffix(tr(" frame(s)"));
   }
   else
   {
-    m_buffer_size_box->setSingleStep(1);
-    m_buffer_size_box->setDecimals(0);
-    m_buffer_size_box->setSuffix(QString::fromStdString(""));
+    m_minimum_buffer_size_box->setSingleStep(1); m_local_buffer_size_box->setSingleStep(1);
+    m_minimum_buffer_size_box->setDecimals(0); m_local_buffer_size_box->setDecimals(0);
+    m_minimum_buffer_size_box->setSuffix(QString::fromStdString("")); m_local_buffer_size_box->setSuffix(QString::fromStdString(""));
   }
 
-  m_buffer_size_box->setRange(0, 10000);
+  m_minimum_buffer_size_box->setRange(0, 10000); m_local_buffer_size_box->setRange(0, 10000);
 
   m_auto_buffer_button->setToolTip(tr(
     "Calculates buffer automatically based on the longest network route.\n"
@@ -126,6 +129,18 @@ void NetPlayDialog::CreateMainLayout()
   m_auto_buffer_sample_timer = new QTimer(this);
   m_auto_buffer_sample_timer->setInterval(1000);
   m_auto_buffer_sample_timer->setSingleShot(false);
+
+  QIcon icon = style()->standardIcon(QStyle::SP_MessageBoxWarning);
+  m_local_under_minimum_warning->setIcon(icon);
+  m_local_under_minimum_warning->setIconSize({ 16, 16 });
+
+  // https://stackoverflow.com/questions/10794532/how-to-make-a-qt-widget-invisible-without-changing-the-position-of-the-other-qt
+  QSizePolicy sp_retain = m_local_under_minimum_warning->sizePolicy();
+  sp_retain.setRetainSizeWhenHidden(true);
+  m_local_under_minimum_warning->setSizePolicy(sp_retain);
+  m_local_under_minimum_warning->setHidden(true);
+  m_local_under_minimum_warning->setToolTip(tr("Your local buffer is below the minimum buffer.\nThe minimum buffer value set by the host will be used."));
+  m_local_under_minimum_warning->setFlat(true);
 
   connect(m_auto_buffer_sample_timer, &QTimer::timeout, this, &NetPlayDialog::SampleAutoBuffer);
 
@@ -178,19 +193,32 @@ void NetPlayDialog::CreateMainLayout()
 
   auto* options_widget = new QBoxLayout(QBoxLayout::TopToBottom);
   auto* top_widget = new QBoxLayout(QBoxLayout::LeftToRight);
-  auto* buffer_widget = new QBoxLayout(QBoxLayout::LeftToRight);
+  auto* minimum_buffer_widget = new QBoxLayout(QBoxLayout::LeftToRight);
+  auto* local_buffer_widget = new QBoxLayout(QBoxLayout::LeftToRight);
   auto* bottom_widget = new FlowLayout;
 
-  auto* buffer_box = new QBoxLayout(QBoxLayout::LeftToRight);
-  buffer_box->addWidget(m_buffer_label);
-  buffer_box->addWidget(m_buffer_size_box);
-  buffer_widget->addLayout(buffer_box);
-  buffer_widget->addWidget(m_auto_buffer_button);
+  auto* minimum_buffer_box = new QBoxLayout(QBoxLayout::LeftToRight);
+  minimum_buffer_box->addWidget(m_minimum_buffer_label);
+  minimum_buffer_box->addWidget(m_minimum_buffer_size_box);
+  minimum_buffer_widget->addLayout(minimum_buffer_box);
+  minimum_buffer_widget->addWidget(m_auto_buffer_button);
 
-  buffer_widget->setAlignment(Qt::AlignLeft);
+  minimum_buffer_widget->setAlignment(Qt::AlignLeft);
+
+  auto* local_buffer_box = new QBoxLayout(QBoxLayout::LeftToRight);
+  local_buffer_box->addWidget(m_local_buffer_label);
+  local_buffer_box->addWidget(m_local_buffer_size_box);
+  local_buffer_widget->addLayout(local_buffer_box);
+  local_buffer_widget->addWidget(m_local_under_minimum_warning, 0, Qt::AlignmentFlag::AlignVCenter);
+
+  local_buffer_widget->setAlignment(Qt::AlignLeft);
 
   top_widget->addWidget(m_start_button, 0, Qt::AlignLeft);
-  top_widget->addLayout(buffer_widget, 0);
+  top_widget->addSpacing(8);
+  top_widget->addLayout(minimum_buffer_widget, 0);
+  top_widget->addSpacing(8);
+  top_widget->addLayout(local_buffer_widget, 0);
+  top_widget->addSpacing(8);
   top_widget->addStretch();
   top_widget->addWidget(m_quit_button, 0, Qt::AlignRight);
 
@@ -295,27 +323,43 @@ void NetPlayDialog::ConnectWidgets()
   connect(m_chat_type_edit, &QLineEdit::returnPressed, this, &NetPlayDialog::OnChat);
 
   // Other
-  connect(m_buffer_size_box, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+  connect(m_minimum_buffer_size_box, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
           [this](double value) {
             int ivalue = GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD) ? (int)(value * 100) : (int)value;
 
-            if (ivalue == m_buffer_size)
+            if (ivalue == m_minimum_buffer_size)
+              return;
+
+            auto server = Settings::Instance().GetNetPlayServer();
+            if (server)
+              server->AdjustMinimumPadBufferSize(ivalue);
+          });
+
+  connect(m_local_buffer_size_box, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+          [this](double value) {
+            int ivalue = GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD) ? (int)(value * 100) : (int)value;
+
+            if (ivalue == m_local_buffer_size)
               return;
 
             auto client = Settings::Instance().GetNetPlayClient();
-            auto server = Settings::Instance().GetNetPlayServer();
-            if (server)
-              server->AdjustPadBufferSize(ivalue);
-            else
-              client->AdjustPadBufferSize(ivalue);
+            if (client)
+              client->AdjustLocalPadBufferSize(ivalue);
           });
 
   connect(m_auto_buffer_button, &QPushButton::clicked, this,
     [this] {
       m_auto_buffer_button->setEnabled(false);
-      m_buffer_size_box->setEnabled(false);
+      m_minimum_buffer_size_box->setEnabled(false);
       m_auto_buffer_sample_timer->start();
       SampleAutoBuffer();
+    });
+
+  connect(m_local_under_minimum_warning, &QPushButton::clicked, this,
+    [this] {
+      auto client = Settings::Instance().GetNetPlayClient();
+      if (client)
+        client->AdjustLocalPadBufferSize(m_minimum_buffer_size);
     });
 
   connect(m_host_input_authority_box, &QCheckBox::toggled, [this](bool checked) {
@@ -476,12 +520,8 @@ void NetPlayDialog::reject()
 
 void NetPlayDialog::show(std::string nickname, bool use_traversal)
 {
-  // have to set this here for some weird reason
-  m_has_gotten_initial_pad_buffer_size = false;
-
   m_nickname = nickname;
   m_use_traversal = use_traversal;
-  m_buffer_size = 0;
   m_old_player_count = 0;
 
   m_room_box->clear();
@@ -519,8 +559,8 @@ void NetPlayDialog::show(std::string nickname, bool use_traversal)
   m_kick_button->setEnabled(false);
   m_auto_buffer_button->setHidden(!is_hosting);
   m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions());
-
-  m_buffer_label->setText(is_hosting ? tr("Buffer:") : tr("Max Buffer:"));
+  m_minimum_buffer_label->setHidden(!is_hosting);
+  m_minimum_buffer_size_box->setHidden(!is_hosting);
 
   QDialog::show();
   UpdateGUI();
@@ -774,33 +814,28 @@ void NetPlayDialog::OnMsgChangeGame(const std::string& title)
 {
   QString qtitle = QString::fromStdString(title);
   QueueOnObject(this, [this, qtitle, title] {
-    bool has_old_game = FindGameFile(m_current_game) != nullptr;
-    bool old_game_polled_on_siread = GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD);
-
     m_game_button->setText(qtitle);
     m_current_game = title;
     UpdateDiscordPresence();
 
-    if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+    if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD) && !m_host_input_authority)
     {
-      m_buffer_size_box->setDecimals(2);
-      m_buffer_size_box->setSingleStep(0.25);
-      m_buffer_size_box->setSuffix(tr(" frame(s)"));
+      m_minimum_buffer_size_box->setDecimals(2); m_local_buffer_size_box->setDecimals(2);
+      m_minimum_buffer_size_box->setSingleStep(0.25); m_local_buffer_size_box->setSingleStep(0.25);
+      m_minimum_buffer_size_box->setSuffix(tr(" frame(s)")); m_local_buffer_size_box->setSuffix(tr(" frame(s)"));
     }
     else
     {
-      m_buffer_size_box->setSingleStep(1);
-      m_buffer_size_box->setDecimals(0);
-      m_buffer_size_box->setSuffix(QString::fromStdString(""));
+      m_minimum_buffer_size_box->setSingleStep(1); m_local_buffer_size_box->setSingleStep(1);
+      m_minimum_buffer_size_box->setDecimals(0); m_local_buffer_size_box->setDecimals(0);
+      m_minimum_buffer_size_box->setSuffix(QString::fromStdString("")); m_local_buffer_size_box->setSuffix(QString::fromStdString(""));
     }
 
     m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions());
 
-    if(has_old_game && old_game_polled_on_siread != GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
-    {
-      DisplayMessage(tr("Polling methods differ. Resetting buffer."), "red");
-      m_buffer_size_box->setValue(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD) ? 1 : 5);
-    }
+    Settings::Instance().GetNetPlayClient()->AdjustLocalPadBufferSize(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD) ? 150 : 6);
+    if(Settings::Instance().GetNetPlayServer())
+        Settings::Instance().GetNetPlayServer()->AdjustMinimumPadBufferSize(0);
   });
 
   DisplayMessage(tr("Game changed to \"%1\"").arg(qtitle), "magenta");
@@ -848,45 +883,55 @@ void NetPlayDialog::OnMsgStopGame()
   QueueOnObject(this, [this] { UpdateDiscordPresence(); });
 }
 
-void NetPlayDialog::OnPadBufferChanged(u32 buffer)
+void NetPlayDialog::OnMinimumPadBufferChanged(u32 buffer)
 {
-  // weird hack but since NetPlayDialog knows about the selected game and NetPlayServer doesn't
-  // we reject the first attempt to set the pad buffer to 5 (= 0.05 frames) and instead set it to
-  // 100 (= 1 frame)
-  if(IsHosting() &&
-    !m_has_gotten_initial_pad_buffer_size &&
-    GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
-  {
-    Settings::Instance().GetNetPlayServer()->AdjustPadBufferSize(100);
-    m_has_gotten_initial_pad_buffer_size = true;
-    return;
-  }
-
   QueueOnObject(this, [this, buffer] {
-    const QSignalBlocker blocker(m_buffer_size_box);
+    const QSignalBlocker blocker(m_minimum_buffer_size_box);
 
     if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
-      m_buffer_size_box->setValue(buffer / 100.0);
+      m_minimum_buffer_size_box->setValue(buffer / 100.0);
     else
-      m_buffer_size_box->setValue(buffer);
+      m_minimum_buffer_size_box->setValue(buffer);
+  });
+
+  if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+  {
+    QString frame_str = buffer == 100 ? tr("frame") : tr("frames");
+    DisplayMessage(tr("Minimum buffer size changed to %1 %2").arg(buffer / 100.0).arg(frame_str), "");
+  }
+  else
+  {
+    DisplayMessage(tr("Minimum buffer size changed to %1").arg(buffer), "");
+  }
+
+  m_minimum_buffer_size = static_cast<int>(buffer);
+  m_local_under_minimum_warning->setHidden(m_local_buffer_size >= m_minimum_buffer_size || m_host_input_authority);
+}
+
+void NetPlayDialog::OnLocalPadBufferChanged(u32 buffer)
+{
+  QueueOnObject(this, [this, buffer] {
+    const QSignalBlocker blocker(m_local_buffer_size_box);
+
+    if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
+      m_local_buffer_size_box->setValue(buffer / 100.0);
+    else
+      m_local_buffer_size_box->setValue(buffer);
   });
 
   if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD))
   {
     QString frame_str = buffer == 100 ? tr("frame") : tr("frames");
 
-    DisplayMessage(m_host_input_authority && !IsHosting() ?
-                      tr("Max buffer size changed to %1 %2").arg(buffer / 100.0).arg(frame_str) :
-                      tr("Buffer size changed to %1 %2").arg(buffer / 100.0).arg(frame_str), "");
+    DisplayMessage(tr("Buffer size changed to %1 %2").arg(buffer / 100.0).arg(frame_str), "");
   }
   else
   {
-    DisplayMessage(m_host_input_authority && !IsHosting() ?
-                      tr("Max buffer size changed to %1").arg(buffer) :
-                      tr("Buffer size changed to %1").arg(buffer), "");
+    DisplayMessage(tr("Buffer size changed to %1").arg(buffer), "");
   }
 
-  m_buffer_size = static_cast<int>(buffer);
+  m_local_buffer_size = static_cast<int>(buffer);
+  m_local_under_minimum_warning->setHidden(m_local_buffer_size >= m_minimum_buffer_size || m_host_input_authority);
 }
 
 void NetPlayDialog::OnHostInputAuthorityChanged(bool enabled)
@@ -897,30 +942,33 @@ void NetPlayDialog::OnHostInputAuthorityChanged(bool enabled)
 
     if (is_hosting)
     {
-      m_buffer_size_box->setEnabled(enable_buffer);
-      m_buffer_label->setEnabled(enable_buffer);
+      m_minimum_buffer_size_box->setEnabled(enable_buffer);
+      m_local_buffer_size_box->setEnabled(enable_buffer);
       m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions() && enable_buffer);
-      m_buffer_size_box->setHidden(false);
-      m_buffer_label->setHidden(false);
 
       QSignalBlocker blocker(m_host_input_authority_box);
       m_host_input_authority_box->setChecked(enabled);
     }
-    else
-    {
-      m_buffer_size_box->setEnabled(true);
-      m_buffer_label->setEnabled(true);
-      m_buffer_size_box->setHidden(!enable_buffer);
-      m_buffer_label->setHidden(!enable_buffer);
-
-      if (enabled)
-        m_buffer_size_box->setValue(1);
-    }
   });
+
   DisplayMessage(enabled ? tr("Host input authority enabled") : tr("Host input authority disabled"),
                  "");
 
   m_host_input_authority = enabled;
+  m_local_under_minimum_warning->setHidden(m_local_buffer_size >= m_minimum_buffer_size || m_host_input_authority);
+
+  if(GetConfigOptionWithSelectedGame(Config::MAIN_POLL_ON_SIREAD) && !m_host_input_authority)
+  {
+    m_minimum_buffer_size_box->setDecimals(2); m_local_buffer_size_box->setDecimals(2);
+    m_minimum_buffer_size_box->setSingleStep(0.25); m_local_buffer_size_box->setSingleStep(0.25);
+    m_minimum_buffer_size_box->setSuffix(tr(" frame(s)")); m_local_buffer_size_box->setSuffix(tr(" frame(s)"));
+  }
+  else
+  {
+    m_minimum_buffer_size_box->setSingleStep(1); m_local_buffer_size_box->setSingleStep(1);
+    m_minimum_buffer_size_box->setDecimals(0); m_local_buffer_size_box->setDecimals(0);
+    m_minimum_buffer_size_box->setSuffix(QString::fromStdString("")); m_local_buffer_size_box->setSuffix(QString::fromStdString(""));
+  }
 }
 
 void NetPlayDialog::OnDesync(u32 frame, const std::string& player)
@@ -1087,7 +1135,7 @@ bool NetPlayDialog::CalculateBufferFromSamples(const std::vector<NetPlay::NetPla
     DisplayMessage(tr("Average ping out of 3 samples was %1 ms").arg(average_ping), "green");
 
     int auto_buffer = (int)(((average_ping * 1.1) / (1000.0 / 60.0)) * 100);
-    Settings::Instance().GetNetPlayServer()->AdjustPadBufferSize(auto_buffer);
+    Settings::Instance().GetNetPlayServer()->AdjustMinimumPadBufferSize(auto_buffer);
     return true;
   }
 
@@ -1097,13 +1145,16 @@ bool NetPlayDialog::CalculateBufferFromSamples(const std::vector<NetPlay::NetPla
 void NetPlayDialog::SampleAutoBuffer()
 {
   m_auto_buffer_samples.push_back(Settings::Instance().GetNetPlayServer()->FindLongestRoute());
+  m_auto_buffer_button->setText(tr("Auto (%1 s)").arg(m_auto_buffer_sample_amount - m_auto_buffer_samples.size()));
+
   NetPlay::NetPlayServer::NetRoute latest_sample = m_auto_buffer_samples[m_auto_buffer_samples.size() - 1];
 
   if(latest_sample.from == nullptr || latest_sample.to == nullptr)
   {
     DisplayMessage(tr("Unable to calculate auto buffer (at least 2 players are required)"), "red");
+    m_auto_buffer_button->setText(tr("Auto"));
     m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions());
-    m_buffer_size_box->setEnabled(true);
+    m_minimum_buffer_size_box->setEnabled(true);
     m_auto_buffer_samples.clear();
     m_auto_buffer_sample_timer->stop();
     return;
@@ -1121,8 +1172,9 @@ void NetPlayDialog::SampleAutoBuffer()
     if(!CalculateBufferFromSamples(m_auto_buffer_samples))
         DisplayMessage(tr("Unable to calculate auto buffer because the ping times were too unstable."), "red");
 
+    m_auto_buffer_button->setText(tr("Auto"));
     m_auto_buffer_button->setEnabled(MeetsAutoBufferConditions());
-    m_buffer_size_box->setEnabled(true);
+    m_minimum_buffer_size_box->setEnabled(true);
     m_auto_buffer_samples.clear();
     m_auto_buffer_sample_timer->stop();
     return;

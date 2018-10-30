@@ -59,7 +59,8 @@ public:
   void OnMsgChangeGame(const std::string& filename) override;
   void OnMsgStartGame() override;
   void OnMsgStopGame() override;
-  void OnPadBufferChanged(u32 buffer) override;
+  void OnMinimumPadBufferChanged(u32 buffer) override;
+  void OnLocalPadBufferChanged(u32 buffer) override;
   void OnHostInputAuthorityChanged(bool enabled) override;
   void OnDesync(u32 frame, const std::string& player) override;
   void OnConnectionLost() override;
@@ -142,9 +143,15 @@ private:
   QPushButton* m_game_button;
   QToolButton* m_md5_button;
   QPushButton* m_start_button;
-  QLabel* m_buffer_label;
-  QDoubleSpinBox* m_buffer_size_box;
+
+  QLabel* m_minimum_buffer_label;
+  QDoubleSpinBox* m_minimum_buffer_size_box;
   QPushButton* m_auto_buffer_button;
+
+  QLabel* m_local_buffer_label;
+  QDoubleSpinBox* m_local_buffer_size_box;
+  QPushButton* m_local_under_minimum_warning;
+
   QCheckBox* m_save_sd_box;
   QCheckBox* m_load_wii_box;
   QCheckBox* m_sync_save_data_box;
@@ -164,11 +171,11 @@ private:
   bool m_use_traversal = false;
   bool m_is_copy_button_retry = false;
   bool m_got_stop_request = true;
-  int m_buffer_size = 0;
+  int m_minimum_buffer_size = 0;
+  int m_local_buffer_size = 0;
   int m_player_count = 0;
   int m_old_player_count = 0;
   bool m_host_input_authority = false;
-  bool m_has_gotten_initial_pad_buffer_size = false;
 
   bool CalculateBufferFromSamples(const std::vector<NetPlay::NetPlayServer::NetRoute>& samples);
   void SampleAutoBuffer();

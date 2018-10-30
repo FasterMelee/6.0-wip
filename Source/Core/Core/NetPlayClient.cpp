@@ -60,7 +60,7 @@
 namespace NetPlay
 {
 static std::mutex crit_netplay_client;
-static NetPlayClient* netplay_client = nullptr;
+NetPlayClient* netplay_client = nullptr;
 static std::unique_ptr<IOS::HLE::FS::FileSystem> s_wii_sync_fs;
 static bool s_si_poll_batching;
 
@@ -400,13 +400,13 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
   }
   break;
 
-  case NP_MSG_PAD_BUFFER:
+  case NP_MSG_MIN_PAD_BUFFER:
   {
     u32 size = 0;
     packet >> size;
 
-    m_target_buffer_size = size;
-    m_dialog->OnPadBufferChanged(size);
+    m_minimum_buffer_size = size;
+    m_dialog->OnMinimumPadBufferChanged(size);
   }
   break;
 
@@ -907,12 +907,14 @@ u32 NetPlayClient::GetPlayersMaxPing() const
       ->second.ping;
 }
 
-int NetPlayClient::ActualBufferSize() const
+unsigned int NetPlayClient::ActualBufferSize() const
 {
-  if(Config::Get(Config::MAIN_POLL_ON_SIREAD))
-    return (int)std::floor(m_target_buffer_size / 100.0);
+  unsigned int buffer = m_host_input_authority ? m_local_buffer_size : std::max(m_minimum_buffer_size, m_local_buffer_size);
 
-  return m_target_buffer_size;
+  if(Config::Get(Config::MAIN_POLL_ON_SIREAD))
+    return (int)std::floor(buffer / 100.0);
+
+  return buffer;
 }
 
 void NetPlayClient::Disconnect()
@@ -1853,16 +1855,10 @@ const PadMappingArray& NetPlayClient::GetWiimoteMapping() const
   return m_wiimote_map;
 }
 
-void NetPlayClient::AdjustPadBufferSize(const unsigned int size)
+void NetPlayClient::AdjustLocalPadBufferSize(const unsigned int size)
 {
-  m_target_buffer_size = size;
-  m_dialog->OnPadBufferChanged(size);
-}
-
-unsigned int NetPlayClient::GetBufferSizeForPort(int port)
-{
-  // TODO: independent buffers
-  return m_target_buffer_size;
+  m_local_buffer_size = size;
+  m_dialog->OnLocalPadBufferChanged(size);
 }
 
 bool IsNetPlayRunning()
@@ -1983,16 +1979,4 @@ int SerialInterface::CSIDevice_GCController::NetPlay_InGamePadToLocalPad(int num
     return NetPlay::netplay_client->InGamePadToLocalPad(numPAD);
 
   return numPAD;
-}
-
-// called from ---CPU--- thread
-// return the buffer for the port at pad_num
-unsigned int SerialInterface::NetPlay_GetBufferForPort(int pad_num)
-{
-  std::lock_guard<std::mutex> lk(NetPlay::crit_netplay_client);
-
-  if (NetPlay::netplay_client)
-    return NetPlay::netplay_client->GetBufferSizeForPort(pad_num);
-
-  return 0;
 }

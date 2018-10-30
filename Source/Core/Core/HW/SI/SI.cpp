@@ -20,6 +20,7 @@
 #include "Core/HW/SystemTimers.h"
 #include "Core/Movie.h"
 #include "Core/NetPlayProto.h"
+#include "Core/NetPlayClient.h"
 #include "Core/Config/MainSettings.h"
 #include "Core/HW/VideoInterface.h"
 
@@ -208,7 +209,7 @@ union USIEXIClockCount
 
 static CoreTiming::EventType* s_change_device_event;
 static CoreTiming::EventType* s_tranfer_pending_event;
-static CoreTiming::EventType* s_poll_event;
+static CoreTiming::EventType* s_netplay_poll_event;
 
 // STATE_TO_SAVE
 static std::array<SSIChannel, MAX_SI_CHANNELS> s_channel;
@@ -387,9 +388,22 @@ static void PollControllers(bool set_registers)
   }
 }
 
-static void PollEvent(u64 userdata, s64 cyclesLate)
+static void NetplayEarlyPollEvent(u64 userdata, s64 cyclesLate)
 {
-  PollControllers(userdata == true);
+  sf::Packet packet;
+  packet << static_cast<NetPlay::MessageId>(NetPlay::NP_MSG_PAD_DATA);
+  bool send = false;
+
+  for(u8 c = 0; c < MAX_SI_CHANNELS; c++)
+  {
+    u8 local_pad = NetPlay::netplay_client->InGamePadToLocalPad(c);
+
+    if(local_pad < 4)
+      send = send || NetPlay::netplay_client->PollLocalPad(local_pad, packet);
+  }
+
+  if(send)
+    NetPlay::netplay_client->SendAsync(std::move(packet));
 }
 
 void Init()
@@ -438,7 +452,7 @@ void Init()
 
   s_change_device_event = CoreTiming::RegisterEvent("ChangeSIDevice", ChangeDeviceCallback);
   s_tranfer_pending_event = CoreTiming::RegisterEvent("SITransferPending", RunSIBuffer);
-  s_poll_event = CoreTiming::RegisterEvent("Poll", PollEvent);
+  s_netplay_poll_event = CoreTiming::RegisterEvent("NetplayEarlyPoll", NetplayEarlyPollEvent);
 }
 
 void Shutdown()
@@ -503,22 +517,29 @@ void RegisterMMIO(MMIO::Mapping* mmio, u32 base)
                       {
                         if(s_channel[c].device->GetDeviceType() != SIDEVICE_NONE)
                         {
-                          if(NetPlay::IsNetPlayRunning() && NetPlay_GetBufferForPort(c) % 100 != 0)
+                          if(i == c)
                           {
-                            // TODO: maybe this should measure the time between polls instead of assuming 50/60
-                            float next_poll_in_ms = 1000.0 / 59.97;
-                            if(VideoInterface::IsPal50())
-                              next_poll_in_ms = 1000.0 / 50;
-
-                            int remainder = NetPlay_GetBufferForPort(c) % 100;
-                            next_poll_in_ms -= next_poll_in_ms * (remainder / 100);
-
-                            // TODO: this won't be reproduced when playing a movie
-                            // Maybe the old method of just calling the NetPlay_Inputs thing will work?
-                            CoreTiming::ScheduleEvent(next_poll_in_ms * (SystemTimers::GetTicksPerSecond() / 1000), s_poll_event, false);
-                          }
-                          else
                             PollControllers(false);
+
+                            if(NetPlay::IsNetPlayRunning() &&
+                              // polling earlier doesn't make much sense for host input authority
+                              !NetPlay::netplay_client->IsHostInputAuthority() &&
+                              NetPlay::netplay_client->ActualBufferSize() % 100 != 0)
+                            {
+                              // TODO: maybe this should measure the time between polls instead of assuming 50/60
+                              // TODO: go through this and make sure everything is correct
+                              float next_poll_in_ms = 1000.0 / 59.97;
+                              if(VideoInterface::IsPal50())
+                                next_poll_in_ms = 1000.0 / 50;
+
+                              int remainder = NetPlay::netplay_client->ActualBufferSize() % 100;
+                              next_poll_in_ms -= next_poll_in_ms * (remainder / 100);
+
+                              CoreTiming::ScheduleEvent((s64)(next_poll_in_ms * (SystemTimers::GetTicksPerSecond() / 1000.0)), s_netplay_poll_event, false);
+                            }
+                          }
+
+                          // Stop if we're are not the first plugged in controller
                           break;
                         }
                       }

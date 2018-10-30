@@ -123,7 +123,6 @@ NetPlayServer::NetPlayServer(const u16 port, const bool forward_port,
     is_connected = true;
     m_do_loop = true;
     m_thread = std::thread(&NetPlayServer::ThreadFunc, this);
-    m_target_buffer_size = 5;
 
 #ifdef USE_UPNP
     if (forward_port)
@@ -331,8 +330,8 @@ unsigned int NetPlayServer::OnConnect(ENetPeer* socket)
   {
     // send the pad buffer value
     spac.clear();
-    spac << static_cast<MessageId>(NP_MSG_PAD_BUFFER);
-    spac << static_cast<u32>(m_target_buffer_size);
+    spac << static_cast<MessageId>(NP_MSG_MIN_PAD_BUFFER);
+    spac << static_cast<u32>(m_minimum_buffer_size);
     Send(player.socket, spac);
   }
 
@@ -493,16 +492,16 @@ void NetPlayServer::UpdateWiimoteMapping()
 }
 
 // called from ---GUI--- thread and ---NETPLAY--- thread
-void NetPlayServer::AdjustPadBufferSize(unsigned int size)
+void NetPlayServer::AdjustMinimumPadBufferSize(unsigned int size)
 {
   std::lock_guard<std::recursive_mutex> lkg(m_crit.game);
 
-  m_target_buffer_size = size;
+  m_minimum_buffer_size = size;
 
   // tell clients to change buffer size
   sf::Packet spac;
-  spac << static_cast<MessageId>(NP_MSG_PAD_BUFFER);
-  spac << static_cast<u32>(m_target_buffer_size);
+  spac << static_cast<MessageId>(NP_MSG_MIN_PAD_BUFFER);
+  spac << static_cast<u32>(m_minimum_buffer_size);
 
   SendAsyncToClients(std::move(spac));
 }
@@ -522,7 +521,7 @@ void NetPlayServer::SetHostInputAuthority(const bool enable)
 
   // resend pad buffer to clients when disabled
   if (!m_host_input_authority)
-    AdjustPadBufferSize(m_target_buffer_size);
+    AdjustMinimumPadBufferSize(m_minimum_buffer_size);
 }
 
 void NetPlayServer::SendAsyncToClients(sf::Packet&& packet)
@@ -986,7 +985,7 @@ bool NetPlayServer::StartGame()
 
   // no change, just update with clients
   if (!m_host_input_authority)
-    AdjustPadBufferSize(m_target_buffer_size);
+    AdjustMinimumPadBufferSize(m_minimum_buffer_size);
 
   m_first_pad_status_received.fill(false);
 
