@@ -87,12 +87,14 @@ std::string GetDefaultSoundBackend()
 #if defined ANDROID
   backend = BACKEND_OPENSLES;
 #elif defined __linux__
-  if (AlsaSound::isValid())
+  if (PulseAudio::isValid())
+    backend = BACKEND_PULSEAUDIO;
+  else if (AlsaSound::isValid())
     backend = BACKEND_ALSA;
 #elif defined __APPLE__
   backend = BACKEND_CUBEB;
 #elif defined _WIN32
-  backend = BACKEND_XAUDIO2;
+  backend = BACKEND_CUBEB;
 #endif
   return backend;
 }

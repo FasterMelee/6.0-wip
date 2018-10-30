@@ -417,7 +417,7 @@ void SConfig::LoadInterfaceSettings(IniFile& ini)
   interface->Get("LanguageCode", &m_InterfaceLanguage, "");
   interface->Get("ExtendedFPSInfo", &m_InterfaceExtendedFPSInfo, false);
   interface->Get("ShowActiveTitle", &m_show_active_title, true);
-  interface->Get("UseBuiltinTitleDatabase", &m_use_builtin_title_database, true);
+  interface->Get("UseBuiltinTitleDatabase", &m_use_builtin_title_database, false);
   interface->Get("ThemeName", &theme_name, DEFAULT_THEME_DIR);
   interface->Get("PauseOnFocusLost", &m_PauseOnFocusLost, false);
   interface->Get("DebugModeEnabled", &bEnableDebugging, false);
@@ -494,10 +494,10 @@ void SConfig::LoadCoreSettings(IniFile& ini)
   core->Get("JITFollowBranch", &bJITFollowBranch, true);
   core->Get("Fastmem", &bFastmem, true);
   core->Get("DSPHLE", &bDSPHLE, true);
-  core->Get("TimingVariance", &iTimingVariance, 40);
+  core->Get("TimingVariance", &iTimingVariance, 8);
   core->Get("CPUThread", &bCPUThread, true);
   core->Get("SyncOnSkipIdle", &bSyncGPUOnSkipIdleHack, true);
-  core->Get("EnableCheats", &bEnableCheats, false);
+  core->Get("EnableCheats", &bEnableCheats, true);
   core->Get("SelectedLanguage", &SelectedLanguage, 0);
   core->Get("OverrideGCLang", &bOverrideGCLanguage, false);
   core->Get("DPL2Decoder", &bDPL2Decoder, false);
@@ -513,8 +513,8 @@ void SConfig::LoadCoreSettings(IniFile& ini)
   for (int i = 0; i < SerialInterface::MAX_SI_CHANNELS; ++i)
   {
     core->Get(StringFromFormat("SIDevice%i", i), (u32*)&m_SIDevice[i],
-              (i == 0) ? SerialInterface::SIDEVICE_GC_CONTROLLER : SerialInterface::SIDEVICE_NONE);
-    core->Get(StringFromFormat("AdapterRumble%i", i), &m_AdapterRumble[i], true);
+             SerialInterface::SIDEVICE_WIIU_ADAPTER);
+    core->Get(StringFromFormat("AdapterRumble%i", i), &m_AdapterRumble[i], false);
     core->Get(StringFromFormat("SimulateKonga%i", i), &m_AdapterKonga[i], false);
   }
   core->Get("WiiSDCard", &m_WiiSDCard, false);

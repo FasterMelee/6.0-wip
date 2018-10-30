@@ -1459,7 +1459,7 @@ NetPlayServer::NetRoute NetPlayServer::FindLongestRoute() const
         if(from != to && ((from.second.ping + to.second.ping) / 2 > longest.ping || longest.from == nullptr || longest.to == nullptr))
         {
           longest = {
-            (from.second.ping + to.second.ping) / 2 + 10 + (std::rand() % 10),
+            (from.second.ping + to.second.ping) / 2,
             &from.second,
             &to.second
           };

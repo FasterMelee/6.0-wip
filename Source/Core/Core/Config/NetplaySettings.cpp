@@ -18,7 +18,7 @@ const ConfigInfo<std::string> NETPLAY_TRAVERSAL_SERVER{{System::Main, "NetPlay",
                                                        "stun.dolphin-emu.org"};
 const ConfigInfo<u16> NETPLAY_TRAVERSAL_PORT{{System::Main, "NetPlay", "TraversalPort"}, 6262};
 const ConfigInfo<std::string> NETPLAY_TRAVERSAL_CHOICE{{System::Main, "NetPlay", "TraversalChoice"},
-                                                       "direct"};
+                                                       "traversal"};
 const ConfigInfo<std::string> NETPLAY_HOST_CODE{{System::Main, "NetPlay", "HostCode"}, "00000000"};
 
 const ConfigInfo<u16> NETPLAY_HOST_PORT{{System::Main, "NetPlay", "HostPort"}, DEFAULT_LISTEN_PORT};
