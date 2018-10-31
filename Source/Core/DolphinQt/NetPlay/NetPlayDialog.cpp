@@ -1117,7 +1117,7 @@ bool NetPlayDialog::MeetsAutoBufferConditions()
 bool NetPlayDialog::CalculateBufferFromSamples(const std::vector<NetPlay::NetPlayServer::NetRoute>& samples)
 {
   int first_sample = samples[0].ping;
-  int sample_difference = first_sample * samples.size();
+  int sample_difference = first_sample * (int)samples.size();
 
   for(int i = 1; i < samples.size(); i++)
     sample_difference -= samples[i].ping;
@@ -1130,7 +1130,7 @@ bool NetPlayDialog::CalculateBufferFromSamples(const std::vector<NetPlay::NetPla
     for(int i = 0; i < samples.size(); i++)
       average_ping += samples[i].ping;
 
-    average_ping /= samples.size();
+    average_ping /= (int)samples.size();
 
     DisplayMessage(tr("Average ping out of 3 samples was %1 ms").arg(average_ping), "green");
 

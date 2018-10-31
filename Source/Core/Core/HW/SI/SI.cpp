@@ -528,9 +528,9 @@ void RegisterMMIO(MMIO::Mapping* mmio, u32 base)
                             {
                               // TODO: maybe this should measure the time between polls instead of assuming 50/60
                               // TODO: go through this and make sure everything is correct
-                              float next_poll_in_ms = 1000.0 / 59.97;
-                              if(VideoInterface::IsPal50())
-                                next_poll_in_ms = 1000.0 / 50;
+                              float next_poll_in_ms = 1000.0f / 59.97f;
+                              if (VideoInterface::IsPal50())
+                                next_poll_in_ms = 1000.0 / 50.0f;
 
                               int remainder = NetPlay::netplay_client->ActualBufferSize() % 100;
                               next_poll_in_ms -= next_poll_in_ms * (remainder / 100);
