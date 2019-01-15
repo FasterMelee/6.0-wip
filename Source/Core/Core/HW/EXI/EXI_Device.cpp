@@ -15,6 +15,7 @@
 #include "Core/HW/EXI/EXI_DeviceIPL.h"
 #include "Core/HW/EXI/EXI_DeviceMemoryCard.h"
 #include "Core/HW/EXI/EXI_DeviceMic.h"
+#include "Core/HW/EXI/EXI_DeviceSlippi.h"
 #include "Core/HW/Memmap.h"
 
 namespace ExpansionInterface
@@ -137,6 +138,10 @@ std::unique_ptr<IEXIDevice> EXIDevice_Create(const TEXIDevices device_type, cons
 
   case EXIDEVICE_GECKO:
     result = std::make_unique<CEXIGecko>();
+    break;
+
+  case EXIDEVICE_SLIPPI:
+    result = std::make_unique<CEXISlippi>();
     break;
 
   case EXIDEVICE_AGP:

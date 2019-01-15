@@ -166,6 +166,9 @@
     <Filter Include="HW %28Flipper/Hollywood%29\WiimoteCommon">
       <UniqueIdentifier>{ee6645da-3ad9-4fe7-809f-e4646d0b0ca5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Slippi">
+      <UniqueIdentifier>{1a8281fa-f891-4a57-ab97-0d227f00cf9f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BootManager.cpp" />
@@ -642,12 +645,6 @@
     <ClCompile Include="PowerPC\JitCommon\JitCache.cpp">
       <Filter>PowerPC\JitCommon</Filter>
     </ClCompile>
-    <ClCompile Include="PowerPC\Jit64\FPURegCache.cpp">
-      <Filter>PowerPC\Jit64</Filter>
-    </ClCompile>
-    <ClCompile Include="PowerPC\Jit64\GPRRegCache.cpp">
-      <Filter>PowerPC\Jit64</Filter>
-    </ClCompile>
     <ClCompile Include="PowerPC\Jit64\Jit_Branch.cpp">
       <Filter>PowerPC\Jit64</Filter>
     </ClCompile>
@@ -673,9 +670,6 @@
       <Filter>PowerPC\Jit64</Filter>
     </ClCompile>
     <ClCompile Include="PowerPC\Jit64\JitAsm.cpp">
-      <Filter>PowerPC\Jit64</Filter>
-    </ClCompile>
-    <ClCompile Include="PowerPC\Jit64\JitRegCache.cpp">
       <Filter>PowerPC\Jit64</Filter>
     </ClCompile>
     <ClCompile Include="HW\GCKeyboardEmu.cpp">
@@ -912,6 +906,15 @@
     </ClCompile>
     <ClCompile Include="Config\WiimoteInputSettings.cpp">
       <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="PowerPC\Jit64\RegCache\FPURegCache.cpp" />
+    <ClCompile Include="PowerPC\Jit64\RegCache\GPRRegCache.cpp" />
+    <ClCompile Include="PowerPC\Jit64\RegCache\JitRegCache.cpp" />
+    <ClCompile Include="HW\EXI\EXI_DeviceSlippi.cpp">
+      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Slippi\SlippiReplayComm.cpp">
+      <Filter>Slippi</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1612,6 +1615,12 @@
     </ClInclude>
     <ClInclude Include="Config\WiimoteInputSettings.h">
       <Filter>Config</Filter>
+    </ClInclude>
+    <ClInclude Include="HW\EXI\EXI_DeviceSlippi.h">
+      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="Slippi\SlippiReplayComm.h">
+      <Filter>Slippi</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

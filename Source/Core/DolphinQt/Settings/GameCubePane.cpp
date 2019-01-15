@@ -38,10 +38,11 @@ enum ExpansionSelection
   EXP_DUMMY = 1,
   EXP_MEMORYCARD = 2,
   EXP_BROADBAND = 2,
-  EXP_GCI_FOLDER = 3,
-  EXP_GECKO = 4,
-  EXP_AGP = 5,
-  EXP_MICROPHONE = 6
+  EXP_SLIPPI = 3,
+  EXP_GCI_FOLDER = 4,
+  EXP_GECKO = 5,
+  EXP_AGP = 6,
+  EXP_MICROPHONE = 7
 };
 
 GameCubePane::GameCubePane()
@@ -94,7 +95,7 @@ void GameCubePane::CreateWidgets()
 
   // Add slot devices
 
-  for (const auto& device : {i10n_nothing, i10n_dummy, tr("Memory Card"), tr("GCI Folder"),
+  for (const auto& device : {i10n_nothing, i10n_dummy, tr("Memory Card"), tr("Slippi"), tr("GCI Folder"),
                              tr("USB Gecko"), tr("Advance Game Port"), tr("Microphone")})
   {
     m_slot_combos[0]->addItem(device);
@@ -306,6 +307,9 @@ void GameCubePane::LoadSettings()
     case ExpansionInterface::EXIDEVICE_MEMORYCARD:
       index = EXP_MEMORYCARD;
       break;
+    case ExpansionInterface::EXIDEVICE_SLIPPI:
+      index = EXP_SLIPPI;
+      break;
     case ExpansionInterface::EXIDEVICE_ETH:
       index = EXP_BROADBAND;
       break;
@@ -367,6 +371,9 @@ void GameCubePane::SaveSettings()
         dev = ExpansionInterface::EXIDEVICE_ETH;
       else
         dev = ExpansionInterface::EXIDEVICE_MEMORYCARD;
+      break;
+    case EXP_SLIPPI:
+      dev = ExpansionInterface::EXIDEVICE_SLIPPI;
       break;
     case EXP_GCI_FOLDER:
       dev = ExpansionInterface::EXIDEVICE_MEMORYCARDFOLDER;

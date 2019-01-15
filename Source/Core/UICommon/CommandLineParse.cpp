@@ -102,10 +102,16 @@ std::unique_ptr<optparse::OptionParser> CreateParser(ParserOptions options)
 
   parser->set_defaults("video_backend", "");
   parser->set_defaults("audio_emulation", "");
+  parser->set_defaults("slippi_input", "Slippi/playback.txt");
   parser->add_option("-v", "--video_backend").action("store").help("Specify a video backend");
   parser->add_option("-a", "--audio_emulation")
       .choices({"HLE", "LLE"})
       .help("Choose audio emulation from [%choices]");
+  parser->add_option("-i", "--slippi_input")
+      .action("store")
+      .metavar("<file>")
+      .type("string")
+      .help("Path to Slippi replay config file (default: Slippi/playback.txt)");
 
   return parser;
 }

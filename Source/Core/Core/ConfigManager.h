@@ -180,6 +180,8 @@ struct SConfig
 
   DiscIO::Region m_region;
 
+  std::string m_strSlippiInput;
+
   std::string m_strVideoBackend;
   std::string m_strGPUDeterminismMode;
 
