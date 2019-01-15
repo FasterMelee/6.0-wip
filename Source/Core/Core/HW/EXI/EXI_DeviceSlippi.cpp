@@ -27,6 +27,14 @@ namespace ExpansionInterface
 {
 
 // Helper functions
+std::vector<u8> uint16ToVector(u16 num)
+{
+  u8 byte0 = num >> 8;
+  u8 byte1 = num & 0xFF;
+
+  return std::vector<u8>({byte0, byte1});
+}
+
 std::vector<u8> uint32ToVector(u32 num)
 {
   u8 byte0 = num >> 24;
@@ -45,6 +53,12 @@ std::vector<u8> int32ToVector(int32_t num)
   u8 byte3 = num & 0xFF;
 
   return std::vector<u8>({byte0, byte1, byte2, byte3});
+}
+
+void appendHalfToBuffer(std::vector<u8>* buf, u16 word)
+{
+  auto halfVector = uint16ToVector(word);
+  buf->insert(buf->end(), halfVector.begin(), halfVector.end());
 }
 
 void appendWordToBuffer(std::vector<u8>* buf, u32 word)
@@ -270,6 +284,8 @@ void CEXISlippi::writeToFile(u8* payload, u32 length, std::string fileOption)
 
     // Close file
     closeFile();
+
+    WARN_LOG(EXPANSIONINTERFACE, "EXI_DeviceSlippi.cpp: Closing replay file.");
   }
 }
 
@@ -284,7 +300,7 @@ void CEXISlippi::createNewFile()
   File::CreateDir("Slippi");
   std::string filepath = generateFileName();
 
-  INFO_LOG(EXPANSIONINTERFACE, "EXI_DeviceSlippi.cpp: Creating new replay file %s",
+  WARN_LOG(EXPANSIONINTERFACE, "EXI_DeviceSlippi.cpp: Creating new replay file %s",
            filepath.c_str());
 
 #ifdef _WIN32
@@ -392,6 +408,16 @@ void CEXISlippi::prepareGameInfo()
   for (int i = 0; i < Slippi::UCF_TOGGLE_SIZE; i++)
   {
     appendWordToBuffer(&m_read_queue, ucfToggles[i]);
+  }
+
+  // Write nametags
+  for (int i = 0; i < 4; i++)
+  {
+    auto player = settings->players[i];
+    for (int j = 0; j < Slippi::NAMETAG_SIZE; j++)
+    {
+      appendHalfToBuffer(&m_read_queue, player.nametag[j]);
+    }
   }
 }
 
