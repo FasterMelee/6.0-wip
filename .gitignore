@@ -46,7 +46,8 @@ Externals/SlippiLib/CMakeCache.txt
 Externals/SlippiLib/CMakeFiles/
 Externals/SlippiLib/Makefile
 Externals/SlippiLib/cmake_install.cmake
+/Source/Core/DolphinQt/Slippi
+# Other
 Ishiiruka.pro
 Source/.idea
-*.slp
 *.Build.CppClean.log

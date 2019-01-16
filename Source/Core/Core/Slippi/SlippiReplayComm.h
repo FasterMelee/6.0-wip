@@ -5,14 +5,12 @@
 class SlippiReplayComm
 {
 public:
-	SlippiReplayComm();
-	~SlippiReplayComm();
-	bool isReplayReady();
-	std::string getReplay();
+  SlippiReplayComm();
+  ~SlippiReplayComm();
+  bool isReplayReady();
+  std::string getReplay();
+
 private:
-	std::string getCommFilePath();
-
-	std::string configFilePath;
-	std::string previousReplayLoaded;
+  std::string configFilePath;
+  std::string previousReplayLoaded;
 };
-

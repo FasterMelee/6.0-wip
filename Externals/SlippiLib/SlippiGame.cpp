@@ -6,19 +6,19 @@ namespace Slippi {
   //*                         Event Handlers
   //**********************************************************************
   //The read operators will read a value and increment the index so the next read will read in the correct location
-  uint8_t readByte(uint8_t* a, int& idx, uint32_t maxSize) {
+  uint8_t readByte(uint8_t* a, int& idx, uint32_t maxSize, uint8_t defaultValue) {
     if (idx >= (int)maxSize) {
       idx += 1;
-      return 0;
+      return defaultValue;
     }
 
     return a[idx++];
   }
 
-  uint16_t readHalf(uint8_t* a, int& idx, uint32_t maxSize) {
+  uint16_t readHalf(uint8_t* a, int& idx, uint32_t maxSize, uint16_t defaultValue) {
     if (idx >= (int)maxSize) {
       idx += 2;
-      return 0;
+      return defaultValue;
     }
 
     uint16_t value = a[idx] << 8 | a[idx + 1];
@@ -26,10 +26,10 @@ namespace Slippi {
     return value;
   }
 
-  uint32_t readWord(uint8_t* a, int& idx, uint32_t maxSize) {
+  uint32_t readWord(uint8_t* a, int& idx, uint32_t maxSize, uint32_t defaultValue) {
     if (idx >= (int)maxSize) {
       idx += 4;
-      return 0;
+      return defaultValue;
     }
 
     uint32_t value = a[idx] << 24 | a[idx + 1] << 16 | a[idx + 2] << 8 | a[idx + 3];
@@ -37,8 +37,8 @@ namespace Slippi {
     return value;
   }
 
-  float readFloat(uint8_t* a, int& idx, uint32_t maxSize) {
-    uint32_t bytes = readWord(a, idx, maxSize);
+  float readFloat(uint8_t* a, int& idx, uint32_t maxSize, float defaultValue) {
+    uint32_t bytes = readWord(a, idx, maxSize, *(uint32_t*)(&defaultValue));
     return *(float*)(&bytes);
   }
 
@@ -47,21 +47,21 @@ namespace Slippi {
 
     // Read version number
     for (int i = 0; i < 4; i++) {
-      game->version[i] = readByte(data, idx, maxSize);
+      game->version[i] = readByte(data, idx, maxSize, 0);
     }
 
     // Read entire game info header
     for (int i = 0; i < GAME_INFO_HEADER_SIZE; i++) {
-      game->settings.header[i] = readWord(data, idx, maxSize);
+      game->settings.header[i] = readWord(data, idx, maxSize, 0);
     }
 
     // Load random seed
-    game->settings.randomSeed = readWord(data, idx, maxSize);
+    game->settings.randomSeed = readWord(data, idx, maxSize, 0);
 
     // Read UCF toggle bytes
     bool shouldRead = game->version[0] >= 1;
     for (int i = 0; i < UCF_TOGGLE_SIZE; i++) {
-      uint32_t value = shouldRead ? readWord(data, idx, maxSize) : 0;
+      uint32_t value = shouldRead ? readWord(data, idx, maxSize, 0) : 0;
       game->settings.ucfToggles[i] = value;
     }
 
@@ -69,7 +69,7 @@ namespace Slippi {
     std::array<std::array<uint16_t, NAMETAG_SIZE>, 4> playerNametags;
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < NAMETAG_SIZE; j++) {
-        playerNametags[i][j] = readHalf(data, idx, maxSize);
+        playerNametags[i][j] = readHalf(data, idx, maxSize, 0);
       }
     }
 
@@ -107,7 +107,7 @@ namespace Slippi {
     int idx = 0;
 
     //Check frame count
-    int32_t frameCount = readWord(data, idx, maxSize);
+    int32_t frameCount = readWord(data, idx, maxSize, 0);
     game->frameCount = frameCount;
 
     FrameData* frame = new FrameData();
@@ -121,34 +121,37 @@ namespace Slippi {
 
     PlayerFrameData* p = new PlayerFrameData();
 
-    uint8_t playerSlot = readByte(data, idx, maxSize);
-    uint8_t isFollower = readByte(data, idx, maxSize);
+    uint8_t playerSlot = readByte(data, idx, maxSize, 0);
+    uint8_t isFollower = readByte(data, idx, maxSize, 0);
 
     //Load random seed for player frame update
-    p->randomSeed = readWord(data, idx, maxSize);
+    p->randomSeed = readWord(data, idx, maxSize, 0);
 
     //Load player data
-    p->animation = readHalf(data, idx, maxSize);
-    p->locationX = readFloat(data, idx, maxSize);
-    p->locationY = readFloat(data, idx, maxSize);
-    p->facingDirection = readFloat(data, idx, maxSize);
+    p->animation = readHalf(data, idx, maxSize, 0);
+    p->locationX = readFloat(data, idx, maxSize, 0);
+    p->locationY = readFloat(data, idx, maxSize, 0);
+    p->facingDirection = readFloat(data, idx, maxSize, 0);
 
     //Controller information
-    p->joystickX = readFloat(data, idx, maxSize);
-    p->joystickY = readFloat(data, idx, maxSize);
-    p->cstickX = readFloat(data, idx, maxSize);
-    p->cstickY = readFloat(data, idx, maxSize);
-    p->trigger = readFloat(data, idx, maxSize);
-    p->buttons = readWord(data, idx, maxSize);
+    p->joystickX = readFloat(data, idx, maxSize, 0);
+    p->joystickY = readFloat(data, idx, maxSize, 0);
+    p->cstickX = readFloat(data, idx, maxSize, 0);
+    p->cstickY = readFloat(data, idx, maxSize, 0);
+    p->trigger = readFloat(data, idx, maxSize, 0);
+    p->buttons = readWord(data, idx, maxSize, 0);
 
     //Raw controller information
-    p->physicalButtons = readHalf(data, idx, maxSize);
-    p->lTrigger = readFloat(data, idx, maxSize);
-    p->rTrigger = readFloat(data, idx, maxSize);
+    p->physicalButtons = readHalf(data, idx, maxSize, 0);
+    p->lTrigger = readFloat(data, idx, maxSize, 0);
+    p->rTrigger = readFloat(data, idx, maxSize, 0);
 
     if (asmEvents[EVENT_PRE_FRAME_UPDATE] >= 59) {
-      p->joystickXRaw = readByte(data, idx, maxSize);
+      p->joystickXRaw = readByte(data, idx, maxSize, 0);
     }
+
+    uint32_t noPercent = 0xFFFFFFFF;
+    p->percent = readFloat(data, idx, maxSize, *(float*)(&noPercent));
 
     // Add player data to frame
     std::unordered_map<uint8_t, PlayerFrameData>* target;
@@ -170,7 +173,7 @@ namespace Slippi {
     int idx = 0;
 
     //Check frame count
-    int32_t frameCount = readWord(data, idx, maxSize);
+    int32_t frameCount = readWord(data, idx, maxSize, 0);
 
     FrameData* frame = new FrameData();
     if (game->frameData.count(frameCount)) {
@@ -183,12 +186,12 @@ namespace Slippi {
     // This is used to determine if a frame is ready to be used for a replay (for mirroring)
     frame->inputsFullyFetched = true;
 
-    uint8_t playerSlot = readByte(data, idx, maxSize);
-    uint8_t isFollower = readByte(data, idx, maxSize);
+    uint8_t playerSlot = readByte(data, idx, maxSize, 0);
+    uint8_t isFollower = readByte(data, idx, maxSize, 0);
 
     PlayerFrameData* p = isFollower ? &frame->followers[playerSlot] : &frame->players[playerSlot];
 
-    p->internalCharacterId = readByte(data, idx, maxSize);
+    p->internalCharacterId = readByte(data, idx, maxSize, 0);
 
     // Check if a player started as sheik and update
     if (frameCount == GAME_FIRST_FRAME && p->internalCharacterId == GAME_SHEIK_INTERNAL_ID) {
@@ -199,7 +202,7 @@ namespace Slippi {
   void handleGameEnd(Game* game, uint32_t maxSize) {
     int idx = 0;
 
-    game->winCondition = readByte(data, idx, maxSize);
+    game->winCondition = readByte(data, idx, maxSize, 0);
   }
 
   // This function gets the position where the raw data starts

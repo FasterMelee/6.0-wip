@@ -430,7 +430,7 @@ void CEXISlippi::prepareCharacterFrameData(int32_t frameIndex, u8 port, u8 isFol
   source = isFollower ? frame->followers : frame->players;
 
   // This must be updated if new data is added
-  int characterDataLen = 45;
+  int characterDataLen = 49;
 
   // Check if player exists
   if (!source.count(port))
@@ -446,8 +446,8 @@ void CEXISlippi::prepareCharacterFrameData(int32_t frameIndex, u8 port, u8 isFol
   // log << frameIndex << "\t" << port << "\t" << data.locationX << "\t" << data.locationY << "\t"
   // << data.animation << "\n";
 
-  // WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] [Player %d] Positions: %f | %f", frameIndex, port,
-  // data.locationX, data.locationY);
+  //WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] [Player %d] Positions: %f | %f", frameIndex, port,
+  //  data.locationX, data.locationY);
 
   // Add all of the inputs in order
   appendWordToBuffer(&m_read_queue, data.randomSeed);
@@ -462,6 +462,8 @@ void CEXISlippi::prepareCharacterFrameData(int32_t frameIndex, u8 port, u8 isFol
   appendWordToBuffer(&m_read_queue, *(u32*)&data.facingDirection);
   appendWordToBuffer(&m_read_queue, (u32)data.animation);
   m_read_queue.push_back(data.joystickXRaw);
+  appendWordToBuffer(&m_read_queue, *(u32*)&data.percent);
+  // NOTE TO DEV: If you add data here, make sure to increase the size above
 }
 
 bool CEXISlippi::checkFrameFullyFetched(int32_t frameIndex)
@@ -687,6 +689,8 @@ void CEXISlippi::DMARead(u32 address, u32 size)
 
   // Copy buffer data to memory
   Memory::CopyToEmu(address, queueAddr, size);
+
+  m_read_queue.clear();
 }
 
 bool CEXISlippi::IsPresent() const
