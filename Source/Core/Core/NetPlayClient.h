@@ -132,6 +132,25 @@ public:
   unsigned int MinimumBufferSize() const { return m_minimum_buffer_size; }
   unsigned int ActualBufferSize() const;
 
+  // used for slippi, not the best place for it
+  inline int FindPlayerPad(const Player* player) const
+  {
+    for (int i = 0; i < 4; i++)
+    {
+      if (m_pad_map[i] == player->pid)
+        return i;
+    }
+
+    return -1;
+  }
+
+protected:
+  struct AsyncQueueEntry
+  {
+    sf::Packet packet;
+    u8 channel_id;
+  };
+
   bool PollLocalPad(int local_pad, sf::Packet& packet);
   bool IsHostInputAuthority() const { return m_host_input_authority; }
 protected:

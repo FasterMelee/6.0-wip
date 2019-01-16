@@ -124,21 +124,23 @@ std::unordered_map<u8, std::string> CEXISlippi::getNetplayNames()
 {
   std::unordered_map<u8, std::string> names;
 
-  //if (netplay_client && netplay_client->IsConnected())
-  //{
-  //  auto netplayPlayers = netplay_client->GetPlayers();
-  //  for (auto it = netplayPlayers.begin(); it != netplayPlayers.end(); ++it)
-  //  {
-  //    auto player = *it;
-  //    u8 portIndex = netplay_client->FindPlayerPad(player);
-  //    if (portIndex < 0)
-  //    {
-  //      continue;
-  //    }
+  auto netplay_client = NetPlay::netplay_client;
+  if (netplay_client && netplay_client->IsConnected())
+  {
+    auto netplayPlayers = netplay_client->GetPlayers();
+    for (auto it = netplayPlayers.begin(); it != netplayPlayers.end(); ++it)
+    {
+      auto player = *it;
+      u8 portIndex = netplay_client->FindPlayerPad(player);
+      if (portIndex < 0)
+      {
+        continue;
+      }
 
-  //    names[portIndex] = player->name;
-  //  }
-  //}
+      names[portIndex] = player->name;
+      //WARN_LOG(EXPANSIONINTERFACE, "Port: %d. Name: %s", portIndex, player->name.c_str());
+    }
+  }
 
   return names;
 }
@@ -448,6 +450,8 @@ void CEXISlippi::prepareCharacterFrameData(int32_t frameIndex, u8 port, u8 isFol
 
   //WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] [Player %d] Positions: %f | %f", frameIndex, port,
   //  data.locationX, data.locationY);
+  //WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] [Player %d] Percent: %f", frameIndex, port,
+  //         data.percent);
 
   // Add all of the inputs in order
   appendWordToBuffer(&m_read_queue, data.randomSeed);
