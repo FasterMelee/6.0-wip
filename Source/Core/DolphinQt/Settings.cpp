@@ -528,6 +528,15 @@ void Settings::SetBatchModeEnabled(bool batch)
   m_batch = batch;
 }
 
+std::string Settings::GetSlippiInputFile() const
+{
+  return SConfig::GetInstance().m_strSlippiInput;
+}
+void Settings::SetSlippiInputFile(std::string path)
+{
+  SConfig::GetInstance().m_strSlippiInput = path;
+}
+
 bool Settings::IsUSBKeyboardConnected() const
 {
   return SConfig::GetInstance().m_WiiKeyboard;

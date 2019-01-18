@@ -6,7 +6,6 @@
 
 SlippiReplayComm::SlippiReplayComm()
 {
-  SConfig::GetInstance().m_strSlippiInput = "Slippi/playback.txt";
   WARN_LOG(EXPANSIONINTERFACE, "SlippiReplayComm: Using playback config path: %s",
            SConfig::GetInstance().m_strSlippiInput.c_str());
   configFilePath = SConfig::GetInstance().m_strSlippiInput.c_str();

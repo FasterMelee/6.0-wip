@@ -89,6 +89,9 @@ public:
   bool IsBatchModeEnabled() const;
   void SetBatchModeEnabled(bool batch);
 
+  std::string GetSlippiInputFile() const;
+  void SetSlippiInputFile(std::string path);
+
   bool IsUSBKeyboardConnected() const;
   void SetUSBKeyboardConnected(bool connected);
 
