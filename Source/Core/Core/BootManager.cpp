@@ -357,7 +357,29 @@ bool BootCore(std::unique_ptr<BootParameters> boot)
     StartUp.m_OCEnable = netplay_settings.m_OCEnable;
     StartUp.m_OCFactor = netplay_settings.m_OCFactor;
     StartUp.m_EXIDevice[0] = netplay_settings.m_EXIDevice[0];
-    StartUp.m_EXIDevice[1] = netplay_settings.m_EXIDevice[1];
+
+    // When this is true, will always use Slippi locally. Otherwise it'll use whatever is configured
+    // This makes it possible for one person to use Slippi and the other to not, hoping this is fine
+    bool isSlippiInPortB = SConfig::GetInstance().m_EXIDevice[1] == ExpansionInterface::EXIDEVICE_SLIPPI;
+    bool isNoneInPortB = SConfig::GetInstance().m_EXIDevice[1] == ExpansionInterface::EXIDEVICE_NONE;
+
+    bool oppSlippiInPortB = netplay_settings.m_EXIDevice[1] == ExpansionInterface::EXIDEVICE_SLIPPI;
+    bool oppNoneInPortB = netplay_settings.m_EXIDevice[1] == ExpansionInterface::EXIDEVICE_NONE;
+
+    if (oppSlippiInPortB && isNoneInPortB)
+    {
+      StartUp.m_EXIDevice[1] = ExpansionInterface::EXIDEVICE_NONE;
+    }
+    else if (oppNoneInPortB && isSlippiInPortB)
+    {
+      StartUp.m_EXIDevice[1] = ExpansionInterface::EXIDEVICE_SLIPPI;
+    }
+    else
+    {
+      // This will just grab what opp is using
+      StartUp.m_EXIDevice[1] = netplay_settings.m_EXIDevice[1];
+    }
+    
     config_cache.bSetEXIDevice[0] = true;
     config_cache.bSetEXIDevice[1] = true;
     StartUp.bFPRF = netplay_settings.m_FPRF;
