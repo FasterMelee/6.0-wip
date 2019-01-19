@@ -422,6 +422,10 @@ namespace Slippi {
     return &game->frameData.at(frame);
   }
 
+  int32_t SlippiGame::GetFrameCount() {
+    return game->frameCount;
+  }
+
   GameSettings* SlippiGame::GetSettings() {
     processData();
     return &game->settings;

@@ -536,7 +536,7 @@ void CEXISlippi::prepareFrameData(u8* payload)
     // Here we have caught up to the game, enable buffer to slow down a bit,
     // if we don't do this the game is playing too close to the data and there
     // is an annoying persistent frame rate drop
-    bufferEnabled = true;
+    //bufferEnabled = true;
 
     // If processing is complete, the game has terminated early. Tell our playback
     // to end the game as well.
@@ -545,6 +545,10 @@ void CEXISlippi::prepareFrameData(u8* payload)
     m_read_queue.push_back(requestResultCode);
     return;
   }
+
+  auto currentFrame = frameIndex;
+  auto latestFrame = m_current_game->GetFrameCount();
+  WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] Playback current behind by: %d frames.", currentFrame, latestFrame - currentFrame);
 
   // Return success code
   m_read_queue.push_back(requestResultCode);

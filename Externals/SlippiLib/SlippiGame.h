@@ -106,6 +106,7 @@ namespace Slippi {
     bool AreSettingsLoaded();
     bool DoesFrameExist(int32_t frame);
     FrameData* GetFrame(int32_t frame);
+    int32_t GetFrameCount();
     GameSettings* GetSettings();
     bool DoesPlayerExist(int8_t port);
     bool IsProcessingComplete();
