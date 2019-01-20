@@ -496,7 +496,7 @@ void CEXISlippi::prepareFrameData(u8* payload)
   // Parse input
   int32_t frameIndex = payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3];
 
-  WARN_LOG(EXPANSIONINTERFACE, "Frame %d has been requested!", frameIndex);
+  //INFO_LOG(EXPANSIONINTERFACE, "Frame %d has been requested!", frameIndex);
 
   // If a new replay should be played, terminate the current game
   auto isNewReplay = replayComm->isReplayReady();
@@ -527,17 +527,17 @@ void CEXISlippi::prepareFrameData(u8* payload)
     if (requestResultCode == 0)
     {
       Common::SleepCurrentThread(2);
-      ERROR_LOG(EXPANSIONINTERFACE, "[Frame %d] Responding to game with wait signal.", frameIndex);
+      //INFO_LOG(EXPANSIONINTERFACE, "[Frame %d] Responding to game with wait signal.", frameIndex);
     }
 
     m_read_queue.push_back(requestResultCode);
     return;
   }
 
-  auto currentFrame = frameIndex;
-  auto latestFrame = m_current_game->GetFrameCount();
-  WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] Playback current behind by: %d frames.", currentFrame,
-           latestFrame - currentFrame);
+  //auto currentFrame = frameIndex;
+  //auto latestFrame = m_current_game->GetFrameCount();
+  //INFO_LOG(EXPANSIONINTERFACE, "[Frame %d] Playback current behind by: %d frames.", currentFrame,
+  //         latestFrame - currentFrame);
 
   // Return success code
   m_read_queue.push_back(requestResultCode);
