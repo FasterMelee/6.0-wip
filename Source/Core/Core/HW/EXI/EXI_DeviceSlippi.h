@@ -83,8 +83,6 @@ private:
   File::IOFile m_file;
   std::vector<u8> m_payload;
 
-  bool bufferEnabled = false;
-
   // replay playback stuff
   void loadFile(std::string path);
   void prepareGameInfo();

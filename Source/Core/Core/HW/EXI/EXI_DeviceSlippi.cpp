@@ -25,7 +25,6 @@
 
 namespace ExpansionInterface
 {
-
 // Helper functions
 std::vector<u8> uint16ToVector(u16 num)
 {
@@ -138,7 +137,7 @@ std::unordered_map<u8, std::string> CEXISlippi::getNetplayNames()
       }
 
       names[portIndex] = player->name;
-      //WARN_LOG(EXPANSIONINTERFACE, "Port: %d. Name: %s", portIndex, player->name.c_str());
+      // WARN_LOG(EXPANSIONINTERFACE, "Port: %d. Name: %s", portIndex, player->name.c_str());
     }
   }
 
@@ -448,9 +447,9 @@ void CEXISlippi::prepareCharacterFrameData(int32_t frameIndex, u8 port, u8 isFol
   // log << frameIndex << "\t" << port << "\t" << data.locationX << "\t" << data.locationY << "\t"
   // << data.animation << "\n";
 
-  //WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] [Player %d] Positions: %f | %f", frameIndex, port,
+  // WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] [Player %d] Positions: %f | %f", frameIndex, port,
   //  data.locationX, data.locationY);
-  //WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] [Player %d] Percent: %f", frameIndex, port,
+  // WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] [Player %d] Percent: %f", frameIndex, port,
   //         data.percent);
 
   // Add all of the inputs in order
@@ -497,7 +496,7 @@ void CEXISlippi::prepareFrameData(u8* payload)
   // Parse input
   int32_t frameIndex = payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3];
 
-  // WARN_LOG(EXPANSIONINTERFACE, "Frame %d has been requested!", frameIndex);
+  WARN_LOG(EXPANSIONINTERFACE, "Frame %d has been requested!", frameIndex);
 
   // If a new replay should be played, terminate the current game
   auto isNewReplay = replayComm->isReplayReady();
@@ -507,19 +506,7 @@ void CEXISlippi::prepareFrameData(u8* payload)
     return;
   }
 
-  // This will only trigger if we have caught up to the data in our
-  // streaming replay and is here to prevent ugly frame rate loss
-  auto frameBuffer = m_current_game->DoesFrameExist(frameIndex + 15);
   auto isProcessingComplete = m_current_game->IsProcessingComplete();
-  if (bufferEnabled && !isProcessingComplete && !frameBuffer)
-  {
-    // WARN_LOG(EXPANSIONINTERFACE, "Waiting for frame buffer...");
-    m_read_queue.push_back(0);
-    return;
-  }
-
-  // We have successfully waited for us to collect a decent frame buffer
-  bufferEnabled = false;
 
   // Wait until frame exists in our data before reading it. We also wait until
   // next frame has been found to ensure we have actually received all of the
@@ -533,22 +520,24 @@ void CEXISlippi::prepareFrameData(u8* payload)
   u8 requestResultCode = 1;
   if (!isFrameReady)
   {
-    // Here we have caught up to the game, enable buffer to slow down a bit,
-    // if we don't do this the game is playing too close to the data and there
-    // is an annoying persistent frame rate drop
-    //bufferEnabled = true;
-
     // If processing is complete, the game has terminated early. Tell our playback
     // to end the game as well.
     auto shouldTerminateGame = isProcessingComplete;
     requestResultCode = shouldTerminateGame ? 2 : 0;
+    if (requestResultCode == 0)
+    {
+      Common::SleepCurrentThread(2);
+      ERROR_LOG(EXPANSIONINTERFACE, "[Frame %d] Responding to game with wait signal.", frameIndex);
+    }
+
     m_read_queue.push_back(requestResultCode);
     return;
   }
 
   auto currentFrame = frameIndex;
   auto latestFrame = m_current_game->GetFrameCount();
-  WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] Playback current behind by: %d frames.", currentFrame, latestFrame - currentFrame);
+  WARN_LOG(EXPANSIONINTERFACE, "[Frame %d] Playback current behind by: %d frames.", currentFrame,
+           latestFrame - currentFrame);
 
   // Return success code
   m_read_queue.push_back(requestResultCode);
@@ -661,7 +650,6 @@ void CEXISlippi::DMAWrite(u32 address, u32 size)
       break;
     case CMD_PREPARE_REPLAY:
       // log.open("log.txt");
-      bufferEnabled = false;
       prepareGameInfo();
       break;
     case CMD_READ_FRAME:
