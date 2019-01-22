@@ -197,6 +197,22 @@ namespace Slippi {
     if (frameCount == GAME_FIRST_FRAME && p->internalCharacterId == GAME_SHEIK_INTERNAL_ID) {
       game->settings.players[playerSlot].characterId = GAME_SHEIK_EXTERNAL_ID;
     }
+
+    // Set settings loaded if this is the last character
+    if (frameCount == GAME_FIRST_FRAME) {
+      uint8_t lastPlayerIndex = 0;
+      for (auto it = frame->players.begin(); it != frame->players.end(); ++it) {
+        if (it->first <= lastPlayerIndex) {
+          continue;
+        }
+
+        lastPlayerIndex = it->first;
+      }
+
+      if (playerSlot >= lastPlayerIndex) {
+        game->areSettingsLoaded = true;
+      }
+    }
   }
 
   void handleGameEnd(Game* game, uint32_t maxSize) {
@@ -348,7 +364,6 @@ namespace Slippi {
       switch (command) {
       case EVENT_GAME_INIT:
         handleGameInit(game, payloadSize);
-        areSettingsLoaded = true;
         break;
       case EVENT_PRE_FRAME_UPDATE:
         handlePreFrameUpdate(game, payloadSize);
@@ -405,14 +420,10 @@ namespace Slippi {
 
   bool SlippiGame::AreSettingsLoaded() {
     processData();
-    return areSettingsLoaded;
+    return game->areSettingsLoaded;
   }
 
   bool SlippiGame::DoesFrameExist(int32_t frame) {
-    // TODO: This function should return multiple states, one should be
-    // TODO: GAME_END which would be returned if processing is complete
-    // TODO: and the requested frame does not exist. This can be used to
-    // TODO: tell the playback engine to terminate the current game
     processData();
     return (bool)game->frameData.count(frame);
   }

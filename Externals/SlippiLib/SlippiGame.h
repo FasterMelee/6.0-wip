@@ -83,6 +83,7 @@ namespace Slippi {
     std::array<uint8_t, 4> version;
     std::unordered_map<int32_t, FrameData> frameData;
     GameSettings settings;
+    bool areSettingsLoaded = false;
 
     int32_t frameCount; // Current/last frame count
 
@@ -117,7 +118,6 @@ namespace Slippi {
     std::string path;
     std::ofstream log;
 
-    bool areSettingsLoaded = false;
     bool isProcessingComplete = false;
     void processData();
   };
