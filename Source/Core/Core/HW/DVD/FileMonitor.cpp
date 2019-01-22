@@ -50,6 +50,25 @@ static bool IsSoundFile(const std::string& filename)
   return extensions.find(extension) != extensions.end();
 }
 
+bool IsSoundFileAt(const DiscIO::Volume& volume, const DiscIO::Partition& partition,
+  u64 offset)
+{
+  const DiscIO::FileSystem* file_system = volume.GetFileSystem(partition);
+
+  // Do nothing if there is no valid file system
+  if (!file_system)
+    return false;
+
+  const std::unique_ptr<DiscIO::FileInfo> file_info = file_system->FindFileInfo(offset);
+
+  // Do nothing if no file was found at that offset
+  if (!file_info)
+    return false;
+
+  const std::string path = file_info->GetPath();
+  return IsSoundFile(path);
+}
+
 void Log(const DiscIO::Volume& volume, const DiscIO::Partition& partition, u64 offset)
 {
   // Do nothing if the log isn't selected
