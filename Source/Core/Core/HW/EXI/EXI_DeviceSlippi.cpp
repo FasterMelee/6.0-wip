@@ -524,11 +524,6 @@ void CEXISlippi::prepareFrameData(u8* payload)
     // to end the game as well.
     auto shouldTerminateGame = isProcessingComplete;
     requestResultCode = shouldTerminateGame ? 2 : 0;
-    if (requestResultCode == 0)
-    {
-      Common::SleepCurrentThread(2);
-      //INFO_LOG(EXPANSIONINTERFACE, "[Frame %d] Responding to game with wait signal.", frameIndex);
-    }
 
     m_read_queue.push_back(requestResultCode);
     return;
