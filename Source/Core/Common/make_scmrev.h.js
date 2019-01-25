@@ -1,9 +1,9 @@
-var wshShell		= new ActiveXObject("WScript.Shell")
-var oFS				= new ActiveXObject("Scripting.FileSystemObject");
+var wshShell = new ActiveXObject("WScript.Shell")
+var oFS		   = new ActiveXObject("Scripting.FileSystemObject");
 
 var outfile			= "./scmrev.h";
-var cmd_commit	    = " rev-parse HEAD";
-var cmd_version		= " describe --tags --always";
+var cmd_commit	= " rev-parse HEAD";
+var cmd_version = " describe --tags --always";
 
 function GetGitExe()
 {
@@ -82,11 +82,11 @@ var out_contents =
 // check if file needs updating
 if (out_contents == GetFileContents(outfile))
 {
-	WScript.Echo(outfile + " current at " + revision);
+	WScript.Echo(outfile + " current at " + commit);
 }
 else
 {
 	// needs updating - writeout current info
 	oFS.CreateTextFile(outfile, true).Write(out_contents);
-	WScript.Echo(outfile + " updated to " + revision);
+	WScript.Echo(outfile + " updated to " + commit);
 }
