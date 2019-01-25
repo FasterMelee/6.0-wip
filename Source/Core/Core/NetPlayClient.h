@@ -144,6 +144,9 @@ public:
     return -1;
   }
 
+  bool IsHostInputAuthority() const { return m_host_input_authority; }
+  bool PollLocalPad(int local_pad, sf::Packet& packet);
+
 protected:
   struct AsyncQueueEntry
   {
@@ -151,9 +154,6 @@ protected:
     u8 channel_id;
   };
 
-  bool PollLocalPad(int local_pad, sf::Packet& packet);
-  bool IsHostInputAuthority() const { return m_host_input_authority; }
-protected:
   void ClearBuffers();
 
   struct
