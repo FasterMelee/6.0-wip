@@ -24,6 +24,7 @@
 #include "Common/StringUtil.h"
 
 #include "Common/Config/Config.h"
+#include "Core/Config/FMSettings.h"
 #include "Core/Config/GraphicsSettings.h"
 #include "Core/Config/SYSCONFSettings.h"
 #include "Core/ConfigLoaders/IsSettingSaveable.h"
@@ -152,9 +153,9 @@ static std::pair<std::string, std::string> GetINILocationFromConfig(const Config
 class INIGameConfigLayerLoader final : public Config::ConfigLayerLoader
 {
 public:
-  INIGameConfigLayerLoader(const std::string& id, u16 revision, bool global)
+  INIGameConfigLayerLoader(const std::string& id, u16 revision, const std::string& en_name, bool global)
       : ConfigLayerLoader(global ? Config::LayerType::GlobalGame : Config::LayerType::LocalGame),
-        m_id(id), m_revision(revision)
+        m_id(id), m_revision(revision), m_en_name(en_name)
   {
   }
 
@@ -180,6 +181,17 @@ public:
     }
 
     LoadControllerConfig(layer);
+
+    Config::GameType current_game_type = FM_GAMETYPE_NONE;
+    if(m_id == "GALE01" || m_id == "GALJ01")
+    {
+      current_game_type |= FM_GAMETYPE_SSBM;
+
+      if(m_en_name.find("20XX") != std::string::npos)
+        current_game_type |= FM_GAMETYPE_SSBM_20XX;
+    }
+
+    layer->Set(Config::FM_GAME_TYPE, current_game_type);
   }
 
   void Save(Config::Layer* layer) override;
@@ -255,6 +267,7 @@ private:
 
   const std::string m_id;
   const u16 m_revision;
+  const std::string m_en_name;
 };
 
 void INIGameConfigLayerLoader::Save(Config::Layer* layer)
@@ -306,14 +319,16 @@ void INIGameConfigLayerLoader::Save(Config::Layer* layer)
 
 // Loader generation
 std::unique_ptr<Config::ConfigLayerLoader> GenerateGlobalGameConfigLoader(const std::string& id,
-                                                                          u16 revision)
+                                                                          u16 revision,
+                                                                          const std::string& en_name)
 {
-  return std::make_unique<INIGameConfigLayerLoader>(id, revision, true);
+  return std::make_unique<INIGameConfigLayerLoader>(id, revision, en_name, true);
 }
 
 std::unique_ptr<Config::ConfigLayerLoader> GenerateLocalGameConfigLoader(const std::string& id,
-                                                                         u16 revision)
+                                                                         u16 revision,
+                                                                         const std::string& en_name)
 {
-  return std::make_unique<INIGameConfigLayerLoader>(id, revision, false);
+  return std::make_unique<INIGameConfigLayerLoader>(id, revision, en_name, false);
 }
 }  // namespace ConfigLoaders

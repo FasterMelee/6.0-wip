@@ -365,7 +365,7 @@ private:
   void LoadUSBPassthroughSettings(IniFile& ini);
   void LoadAutoUpdateSettings(IniFile& ini);
 
-  void SetRunningGameMetadata(const std::string& game_id, u64 title_id, u16 revision,
+  void SetRunningGameMetadata(const std::string& game_id, const std::string& title_description, u64 title_id, u16 revision,
                               Core::TitleDatabase::TitleType type);
 
   static SConfig* m_Instance;

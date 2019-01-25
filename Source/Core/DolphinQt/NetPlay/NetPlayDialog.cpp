@@ -433,9 +433,9 @@ void NetPlayDialog::OnStart()
 
   // Load GameINI so we can sync the settings from it
   Config::AddLayer(
-      ConfigLoaders::GenerateGlobalGameConfigLoader(game->GetGameID(), game->GetRevision()));
+      ConfigLoaders::GenerateGlobalGameConfigLoader(game->GetGameID(), game->GetRevision(), game->GetLongName(DiscIO::Language::English)));
   Config::AddLayer(
-      ConfigLoaders::GenerateLocalGameConfigLoader(game->GetGameID(), game->GetRevision()));
+      ConfigLoaders::GenerateLocalGameConfigLoader(game->GetGameID(), game->GetRevision(), game->GetLongName(DiscIO::Language::English)));
 
   // Copy all relevant settings
   settings.m_CPUthread = Config::Get(Config::MAIN_CPU_THREAD);

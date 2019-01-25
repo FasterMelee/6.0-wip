@@ -649,13 +649,15 @@ void SConfig::LoadAutoUpdateSettings(IniFile& ini)
 
 void SConfig::ResetRunningGameMetadata()
 {
-  SetRunningGameMetadata("00000000", 0, 0, Core::TitleDatabase::TitleType::Other);
+  SetRunningGameMetadata("00000000", "", 0, 0, Core::TitleDatabase::TitleType::Other);
 }
 
 void SConfig::SetRunningGameMetadata(const DiscIO::Volume& volume,
                                      const DiscIO::Partition& partition)
 {
-  SetRunningGameMetadata(volume.GetGameID(partition), volume.GetTitleID(partition).value_or(0),
+  SetRunningGameMetadata(volume.GetGameID(partition),
+                         volume.GetLongNames()[DiscIO::Language::English],
+                         volume.GetTitleID(partition).value_or(0),
                          volume.GetRevision(partition).value_or(0),
                          Core::TitleDatabase::TitleType::Other);
 }
@@ -671,16 +673,17 @@ void SConfig::SetRunningGameMetadata(const IOS::ES::TMDReader& tmd)
   if (!DVDInterface::UpdateRunningGameMetadata(tmd_title_id))
   {
     // If not launching a disc game, just read everything from the TMD.
-    SetRunningGameMetadata(tmd.GetGameID(), tmd_title_id, tmd.GetTitleVersion(),
+    SetRunningGameMetadata(tmd.GetGameID(), tmd.GetGameID(), tmd_title_id, tmd.GetTitleVersion(),
                            Core::TitleDatabase::TitleType::Channel);
   }
 }
 
-void SConfig::SetRunningGameMetadata(const std::string& game_id, u64 title_id, u16 revision,
+void SConfig::SetRunningGameMetadata(const std::string& game_id, const std::string& title_description, u64 title_id, u16 revision,
                                      Core::TitleDatabase::TitleType type)
 {
-  const bool was_changed = m_game_id != game_id || m_title_id != title_id || m_revision != revision;
+  const bool was_changed = m_game_id != game_id || m_title_description != title_description || m_title_id != title_id || m_revision != revision;
   m_game_id = game_id;
+  m_title_description = title_description;
   m_title_id = title_id;
   m_revision = revision;
 
@@ -707,12 +710,10 @@ void SConfig::SetRunningGameMetadata(const std::string& game_id, u64 title_id, u
     return;
   }
 
-  const Core::TitleDatabase title_database;
-  m_title_description = title_database.Describe(m_game_id, type);
   NOTICE_LOG(CORE, "Active title: %s", m_title_description.c_str());
 
-  Config::AddLayer(ConfigLoaders::GenerateGlobalGameConfigLoader(game_id, revision));
-  Config::AddLayer(ConfigLoaders::GenerateLocalGameConfigLoader(game_id, revision));
+  Config::AddLayer(ConfigLoaders::GenerateGlobalGameConfigLoader(game_id, revision, title_description));
+  Config::AddLayer(ConfigLoaders::GenerateLocalGameConfigLoader(game_id, revision, title_description));
 
   if (Core::IsRunning())
   {

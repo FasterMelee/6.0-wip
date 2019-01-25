@@ -24,7 +24,8 @@ add_library(core
   Boot/Boot.cpp
   Boot/Boot_WiiWAD.cpp
   Boot/DolReader.cpp
-  Boot/ElfReader.cpp
+	Boot/ElfReader.cpp
+	Config/FMSettings.cpp
   Config/GraphicsSettings.cpp
   Config/MainSettings.cpp
   Config/NetplaySettings.cpp

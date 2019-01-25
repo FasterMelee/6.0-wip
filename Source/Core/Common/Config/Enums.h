@@ -18,6 +18,7 @@ enum class LayerType
   CommandLine,
   CurrentRun,
   Meta,
+  FMOverride
 };
 
 enum class System
@@ -30,9 +31,11 @@ enum class System
   GFX,
   Logger,
   Debugger,
+  FM
 };
 
-constexpr std::array<LayerType, 7> SEARCH_ORDER{{
+constexpr std::array<LayerType, 8> SEARCH_ORDER{{
+    LayerType::FMOverride,
     LayerType::CurrentRun,
     LayerType::CommandLine,
     LayerType::Movie,

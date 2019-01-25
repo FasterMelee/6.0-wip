@@ -889,6 +889,9 @@
     <ClCompile Include="ConfigLoaders\IsSettingSaveable.cpp">
       <Filter>ConfigLoader</Filter>
     </ClCompile>
+    <ClCompile Include="Config\FMSettings.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
     <ClCompile Include="Config\GraphicsSettings.cpp">
       <Filter>Config</Filter>
     </ClCompile>

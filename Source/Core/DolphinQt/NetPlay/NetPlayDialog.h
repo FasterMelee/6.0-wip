@@ -105,9 +105,9 @@ private:
     if(game)
     {
       Config::AddLayer(
-          ConfigLoaders::GenerateGlobalGameConfigLoader(game->GetGameID(), game->GetRevision()));
+          ConfigLoaders::GenerateGlobalGameConfigLoader(game->GetGameID(), game->GetRevision(), game->GetLongName(DiscIO::Language::English)));
       Config::AddLayer(
-          ConfigLoaders::GenerateLocalGameConfigLoader(game->GetGameID(), game->GetRevision()));
+          ConfigLoaders::GenerateLocalGameConfigLoader(game->GetGameID(), game->GetRevision(), game->GetLongName(DiscIO::Language::English)));
     }
 
     T value = Config::Get(info);
